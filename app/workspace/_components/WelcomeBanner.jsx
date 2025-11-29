@@ -3,7 +3,7 @@ import React from "react";
 
 export default function WelcomeBanner() {
   return (
-    <div className="p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl bg-linear-to-r from-emerald-950 via-cyan-900 to-cyan-600 text-white shadow-lg">
+    <div className="p-4 m-0 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl bg-linear-to-r from-emerald-950 via-cyan-900 to-cyan-600 text-white shadow-lg">
       <h2 className="font-extrabold text-5xl sm:text-3xl md:text-4xl lg:text-5xl tracking-tight">
         Welcome to{" "}
         <span className="relative bg-linear-to-r from-amber-500 via-white to-amber-500 bg-clip-text text-transparent animate-shimmer">

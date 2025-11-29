@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/config/db";
 import { coursesTable } from "@/config/schema";
-import { asc, desc, eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { currentUser } from "@clerk/nextjs/server";
 
 export async function GET(req) {

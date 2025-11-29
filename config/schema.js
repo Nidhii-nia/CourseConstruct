@@ -26,3 +26,10 @@ export const coursesTable = pgTable("courses", {
     .notNull()
     .references(() => usersTable.email),
 });
+
+export const enrollCourseTable = pgTable('enrollCourse',{
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  cid: varchar('cid').references(()=>coursesTable.cid).notNull(),
+  useremail:varchar('useremail').references(()=>usersTable.email).notNull(),
+  completedChapters:json()
+})

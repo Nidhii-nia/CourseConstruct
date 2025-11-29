@@ -135,16 +135,28 @@ export async function POST(req) {
 const GenerateImage = async (prompt) => {
   try {
     const hf = new InferenceClient(process.env.HF_TOKEN);
-    const result = await hf.textToImage({
+    const response = await hf.textToImage({
       model: "stabilityai/stable-diffusion-xl-base-1.0",
       inputs: prompt,
-      parameters: { width: 768, height: 432, num_inference_steps: 30 },
+      parameters: { width: 768, height: 432, num_inference_steps: 30 }
     });
-    const binary = await result.binary();
-    const base64 = Buffer.from(binary).toString("base64");
-    return `data:image/png;base64,${base64}`;
+
+    // The response will be a Blob (browser) or ArrayBuffer/Buffer (Node)
+    if (response?.blob) {
+      const buffer = Buffer.from(await response.blob());
+      return `data:image/png;base64,${buffer.toString("base64")}`;
+    } else if (response?.arrayBuffer) {
+      const buffer = Buffer.from(await response.arrayBuffer());
+      return `data:image/png;base64,${buffer.toString("base64")}`;
+    } else if (response instanceof Buffer) {
+      return `data:image/png;base64,${response.toString("base64")}`;
+    } else {
+      // If API returns base64 directly
+      return response?.base64 ? `data:image/png;base64,${response.base64}` : "/books.png";
+    }
   } catch (err) {
     console.error("Image generation failed:", prompt, err);
     return "/books.png"; // fallback
   }
 };
+

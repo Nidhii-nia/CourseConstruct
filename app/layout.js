@@ -32,11 +32,13 @@
 //   );
 // }
 
+
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import Provider from "./provider";
-import { Toaster } from "sonner"; // ✅ import Toaster
+import { Toaster } from "sonner"; 
+import GlobalLoader from "./GlobalLoader";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -58,9 +60,10 @@ export default function RootLayout({ children }) {
     <ClerkProvider>
       <html lang="en">
         <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+          className={`${geistSans.variable} ${geistMono.variable} antialiased bg-secondary`}
         >
           <Provider>
+            <GlobalLoader />
             {children}
             {/* ✅ Add the Sonner Toaster here */}
             <Toaster richColors position="top-right" />

@@ -2,8 +2,9 @@
 
 import { Button } from "@/components/ui/button";
 import axios from "axios";
-import { Book, Clock, Loader2, Settings2Icon, TrendingUpDownIcon } from "lucide-react";
+import { Book, Clock, Loader2, PlaySquareIcon, Settings2Icon, TrendingUpDownIcon } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { toast } from "sonner";
@@ -49,7 +50,7 @@ function formatDurationFriendly(raw) {
   return raw;
 }
 
-function CourseInfo({ course }) {
+function CourseInfo({ course,viewCourse }) {
   const courseLayout = course?.courseJson?.course;
   const chapters = courseLayout?.chapters;
   const [loading, setLoading] = useState(false);
@@ -95,26 +96,26 @@ function CourseInfo({ course }) {
   }, 0);
 
   return (
-    <div className="flex flex-col-reverse lg:flex-row gap-5 justify-between shadow-xl rounded-2xl p-4">
+    <div className="flex flex-col-reverse lg:flex-row gap-5 justify-between shadow-2xl border border-amber-950 rounded-2xl p-4">
       <div className="flex flex-col gap-5">
         <h2 className="font-bold text-2xl">{courseLayout?.name}</h2>
         <p className="line-clamp-2 text-gray-500">{courseLayout?.description}</p>
         <div className="grid grid-cols-1 md:grid-cols-3">
-          <div className="flex gap-5 items-center p-3 rounded-b-lg shadow-2xs">
+          <div className="flex gap-5 items-center p-3 m-0.5 rounded-b-lg border border-amber-900">
             <Clock className="text-yellow-500" />
             <section>
               <h2 className="font-bold">Duration</h2>
               <h2>{formatDurationFriendly(totalMinutes)}</h2>
             </section>
           </div>
-          <div className="flex gap-5 items-center p-3 rounded-b-lg shadow-2xs">
+          <div className="flex gap-5 items-center p-3 m-0.5 rounded-b-lg border border-amber-900">
             <Book className="text-green-500" />
             <section>
               <h2 className="font-bold">Chapters</h2>
               <h2>{course?.noOfChapters}</h2>
             </section>
           </div>
-          <div className="flex gap-5 items-center p-3 rounded-b-lg shadow-2xs">
+          <div className="flex gap-5 items-center p-3 m-0.5 rounded-b-lg border border-amber-900">
             <TrendingUpDownIcon className="text-red-500" />
             <section>
               <h2 className="font-bold">Difficulty</h2>
@@ -122,7 +123,7 @@ function CourseInfo({ course }) {
             </section>
           </div>
         </div>
-        <Button onClick={GenerateCourseContent} disabled={loading}>
+{! viewCourse ?         <Button onClick={GenerateCourseContent} disabled={loading}>
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...
@@ -132,7 +133,9 @@ function CourseInfo({ course }) {
               <Settings2Icon className="w-4 h-4 mr-2" /> Generate Content
             </>
           )}
-        </Button>
+        </Button> : <Link href={`/course/${course?.cid}`}><Button>
+          <PlaySquareIcon /> Resume Learning
+          </Button></Link>}
       </div>
       <Image
         src={course?.bannerImgUrl}

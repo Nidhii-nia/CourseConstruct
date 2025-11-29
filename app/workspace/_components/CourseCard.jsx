@@ -1,11 +1,35 @@
 import { Button } from "@/components/ui/button";
-import { Book, PlaySquareIcon, Plus } from "lucide-react";
+import axios from "axios";
+import { Book, LoaderCircle, PlaySquareIcon, Plus } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
+import React, { useState } from "react";
+import { toast } from "sonner";
 
 function CourseCard({ course }) {
   const courseJson = course?.courseJson?.course;
+  const [loading,setLoading] = useState(false);
+
+  const onEnrollCourse = async() => {
+    try{
+      setLoading(true);
+          const result = await axios.post('/api/enroll-course',{
+      courseId: course?.cid
+    })
+    console.log(result.data);
+    if(result.data.response){
+      toast.warning("Already Enrolled to the course!");
+      setLoading(false);
+      return;
+    }
+    toast.success('🎉 Enrolled!')
+    setLoading(false);
+    }catch(e){
+      toast.error('Internal Server Error');
+      setLoading(false);
+    }
+    
+  };
 
   return (
     <div
@@ -37,11 +61,15 @@ function CourseCard({ course }) {
             {courseJson?.noOfChapters > 1 ? "Chapters" : "Chapter"}
           </span>
           {course?.courseContent?.length ? (
-            <Button className="bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-1 rounded-md text-sm flex items-center gap-2 shadow">
-              <PlaySquareIcon size={16} /> Start Learning
+            <Button
+              className="bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-1 rounded-md text-sm flex items-center gap-2 shadow"
+              onClick={onEnrollCourse}
+              disabled = {loading}
+            >
+              {loading?<LoaderCircle className="animate-spin"/> : <PlaySquareIcon size={16} />} Enroll
             </Button>
           ) : (
-            <Link href= {`/workspace/edit-course/${course?.cid}`}>
+            <Link href={`/workspace/edit-course/${course?.cid}`}>
               <Button
                 size="sm"
                 className="
@@ -49,7 +77,11 @@ function CourseCard({ course }) {
     text-white
     border-0
     flex items-center gap-2
-  " ><Plus /> Generate Course</Button>{" "} </Link>
+  "
+              >
+                <Plus /> Generate Course
+              </Button>{" "}
+            </Link>
           )}
         </div>
       </div>
