@@ -1,6 +1,7 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { v4 as uuid4 } from "uuid"; 
 import { toast } from "sonner";
 import {
   Dialog,
@@ -22,14 +23,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Loader2, AlertCircle } from "lucide-react";
+import { Sparkles, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { startLoading, stopLoading } from "@/app/components/RouteLoader";
 
 function AddNewCourseDialogue({ children }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [error, setError] = useState(null);
-  const [retryCount, setRetryCount] = useState(0);
+  const [mounted, setMounted] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -42,12 +43,17 @@ function AddNewCourseDialogue({ children }) {
 
   const router = useRouter();
 
+  // Set mounted state to prevent state updates after unmount
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
   const onHandleInputChange = (field, value) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
-    if (error) setError(null);
   };
 
   const resetForm = () => {
@@ -59,8 +65,6 @@ function AddNewCourseDialogue({ children }) {
       category: "",
       level: "",
     });
-    setError(null);
-    setRetryCount(0);
   };
 
   const validateForm = () => {
@@ -91,226 +95,209 @@ function AddNewCourseDialogue({ children }) {
     if (!validateForm()) return;
 
     setIsLoading(true);
-    setRetryCount(0);
+    startLoading();
 
     try {
-      const baseURL =
-        typeof window !== "undefined" ? window.location.origin : "";
+      const clientRequestId = uuid4();
 
-      let result;
-      let attemptCount = 0;
-      const maxAttempts = 3;
-
-      while (attemptCount < maxAttempts) {
-        try {
-          attemptCount++;
-
-          result = await axios.post(
-            `${baseURL}/api/generate-course-layout`,
-            {
-              ...formData, // send only data (backend generates cid)
-            },
-            {
-              headers: { "Content-Type": "application/json" },
-              timeout: 60000,
-              validateStatus: (status) => status < 500,
-            }
-          );
-
-          console.log("API Response:", result);
-
-          if (result?.status === 200 && result.data?.success) {
-            break;
-          } else {
-            throw new Error(result.data?.error || "Unknown API error");
-          }
-        } catch (err) {
-          setRetryCount(attemptCount);
-          if (attemptCount >= maxAttempts) throw err;
-
-          const delay = 1000 * Math.pow(2, attemptCount - 1);
-          await new Promise((resolve) => setTimeout(resolve, delay));
+      const result = await axios.post(
+        "/api/generate-course-layout", // Use relative path
+        {
+          ...formData,
+          clientRequestId,
+        },
+        {
+          headers: { "Content-Type": "application/json" },
+          timeout: 180000,
         }
-      }
+      );
 
       if (result?.data?.success) {
         toast.success("🎉 Course Layout generated successfully!");
-        setIsOpen(false);
-        resetForm();
+        
+        if (mounted) {
+          setIsOpen(false);
+          resetForm();
+        }
 
-        // ⬅ redirect using backend-generated cid
         router.push(`/workspace/edit-course/${result.data.cid}`);
       } else {
-        toast.error("⚠️ Failed to generate course. Please try again.");
+        toast.error(result?.data?.error || "⚠️ Failed to generate course.");
       }
     } catch (error) {
       console.error("❌ Error generating course:", error);
+      
+      // Don't update state if component is unmounted
+      if (!mounted) return;
+      
       toast.error(
         error.message ||
           "Failed to generate course. Please check your internet connection."
       );
     } finally {
-      setIsLoading(false);
+      if (mounted) {
+        setIsLoading(false);
+      }
+      stopLoading(); // No delay needed
+    }
+  };
+
+  const handleOpenChange = (open) => {
+    setIsOpen(open);
+    if (!open && !isLoading) {
+      resetForm();
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[500px] md:max-w-[550px] max-h-[85vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="text-lg sm:text-xl font-semibold flex items-center gap-2">
-            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
-            Create New Course Using AI
+          <DialogTitle className="flex items-center gap-2 text-xl font-bold">
+            <Sparkles className="w-5 h-5 text-primary" />
+            Create New Course
           </DialogTitle>
-          <DialogDescription className="text-xs sm:text-sm">
-            Fill in the details below and let AI generate a structured course
-            curriculum for you.
+          <DialogDescription className="text-muted-foreground">
+            Fill in the details below to generate a new course structure.
+            AI will help create a comprehensive course layout.
           </DialogDescription>
         </DialogHeader>
 
-        {error && (
-          <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-            <div className="flex-1 text-xs sm:text-sm text-red-600 font-medium">
-              {error}
-              {retryCount > 0 && (
-                <p className="text-xs text-red-500 mt-1">
-                  Retry attempt: {retryCount}/3
-                </p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {isLoading && (
-          <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <Loader2 className="w-4 h-4 text-blue-600 animate-spin shrink-0" />
-            <div className="flex-1 text-xs sm:text-sm text-blue-600">
-              Generating your course... please wait 30–60 seconds.
-            </div>
-          </div>
-        )}
-
-        <div className="flex flex-col space-y-4 py-3">
-          <div className="space-y-1.5">
-            <label className="text-xs sm:text-sm font-medium text-gray-900">
+        <div className="space-y-4 py-4">
+          {/* Course Name */}
+          <div className="space-y-2">
+            <label htmlFor="name" className="text-sm font-medium">
               Course Name *
             </label>
             <Input
-              placeholder="e.g., Introduction to React"
+              id="name"
+              placeholder="Enter course name (e.g., 'Advanced React Patterns')"
               value={formData.name}
               onChange={(e) => onHandleInputChange("name", e.target.value)}
               disabled={isLoading}
+              maxLength={100}
+              className="w-full"
             />
+            <p className="text-xs text-muted-foreground">
+              {formData.name.length}/100 characters
+            </p>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs sm:text-sm font-medium text-gray-900">
+          {/* Description */}
+          <div className="space-y-2">
+            <label htmlFor="description" className="text-sm font-medium">
               Description (Optional)
             </label>
             <Textarea
-              placeholder="Describe what this course will cover..."
-              rows={3}
+              id="description"
+              placeholder="Brief description of what this course covers..."
               value={formData.description}
               onChange={(e) => onHandleInputChange("description", e.target.value)}
+              disabled={isLoading}
+              rows={3}
+              className="resize-none"
+            />
+          </div>
+
+          {/* Include Videos */}
+          <div className="flex items-center justify-between p-3 border rounded-lg">
+            <div className="space-y-0.5">
+              <label className="text-sm font-medium">
+                Include YouTube Videos
+              </label>
+              <p className="text-xs text-muted-foreground">
+                AI will find relevant videos for each chapter
+              </p>
+            </div>
+            <Switch
+              checked={formData.includeVideo}
+              onCheckedChange={(checked) => onHandleInputChange("includeVideo", checked)}
               disabled={isLoading}
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="text-xs sm:text-sm font-medium text-gray-900">
-                Number of Chapters *
-              </label>
-              <Input
-                type="number"
-                min="1"
-                max="20"
-                placeholder="e.g., 5"
-                value={formData.noOfChapters}
-                onChange={(e) =>
-                  onHandleInputChange("noOfChapters", e.target.value)
-                }
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs sm:text-sm font-medium text-gray-900">
-                Difficulty Level *
-              </label>
-              <Select
-                onValueChange={(value) => onHandleInputChange("level", value)}
-                disabled={isLoading}
-                value={formData.level}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select level" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="beginner">🌱 Beginner</SelectItem>
-                  <SelectItem value="moderate">📚 Moderate</SelectItem>
-                  <SelectItem value="advanced">🚀 Advanced</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          {/* Number of Chapters */}
+          <div className="space-y-2">
+            <label htmlFor="chapters" className="text-sm font-medium">
+              Number of Chapters *
+            </label>
+            <Input
+              id="chapters"
+              type="number"
+              min="1"
+              max="20"
+              placeholder="Enter number of chapters (1-20)"
+              value={formData.noOfChapters}
+              onChange={(e) => onHandleInputChange("noOfChapters", e.target.value)}
+              disabled={isLoading}
+              className="w-full"
+            />
+            <p className="text-xs text-muted-foreground">
+              Recommended: 5-10 chapters for optimal learning
+            </p>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs sm:text-sm font-medium text-gray-900">
+          {/* Category */}
+          <div className="space-y-2">
+            <label htmlFor="category" className="text-sm font-medium">
               Category (Optional)
             </label>
             <Input
-              placeholder="e.g., Web Development"
+              id="category"
+              placeholder="e.g., Web Development, Data Science"
               value={formData.category}
               onChange={(e) => onHandleInputChange("category", e.target.value)}
               disabled={isLoading}
             />
           </div>
 
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-            <div className="space-y-0.5">
-              <label className="text-xs sm:text-sm font-medium text-gray-900">
-                Include Video Content
-              </label>
-              <p className="text-[11px] text-gray-500">
-                Generate video recommendations for each chapter
-              </p>
-            </div>
-
-            <Switch
-              checked={formData.includeVideo}
-              onCheckedChange={(checked) =>
-                onHandleInputChange("includeVideo", checked)
-              }
+          {/* Difficulty Level */}
+          <div className="space-y-2">
+            <label htmlFor="level" className="text-sm font-medium">
+              Difficulty Level *
+            </label>
+            <Select
+              value={formData.level}
+              onValueChange={(value) => onHandleInputChange("level", value)}
               disabled={isLoading}
-            />
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select difficulty level" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="beginner">Beginner</SelectItem>
+                <SelectItem value="intermediate">Intermediate</SelectItem>
+                <SelectItem value="advanced">Advanced</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
-        <DialogFooter className="gap-2 flex-col sm:flex-row sm:gap-0">
+        <DialogFooter className="gap-2 sm:gap-0">
           <Button
             type="button"
             variant="outline"
-            onClick={resetForm}
+            onClick={() => setIsOpen(false)}
             disabled={isLoading}
+            className="w-full sm:w-auto"
           >
-            Reset
+            Cancel
           </Button>
-
           <Button
             onClick={onGenerate}
             disabled={isLoading}
-            className="bg-linear-to-r from-blue-500 to-purple-600 text-white"
+            className="w-full sm:w-auto"
           >
             {isLoading ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating...
               </>
             ) : (
               <>
-                <Sparkles className="w-4 h-4 mr-2" /> Generate Course
+                <Sparkles className="mr-2 h-4 w-4" />
+                Generate Course
               </>
             )}
           </Button>

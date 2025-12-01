@@ -20,16 +20,18 @@ export const coursesTable = pgTable("courses", {
   category: varchar(),
   courseJson: json(),
   bannerImgUrl: varchar().default(''),
-  courseContent:json().default({}),
-  // Correct foreign key reference
+  courseContent: json().default({}),
   useremail: varchar({ length: 255 })
     .notNull()
     .references(() => usersTable.email),
+
+  clientRequestIdContent: varchar({ length: 255 }).default(''), // <-- ADD THIS
 });
+
 
 export const enrollCourseTable = pgTable('enrollCourse',{
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  cid: varchar('cid').references(()=>coursesTable.cid).notNull(),
+  cid: varchar({ length: 255 }).references(() => coursesTable.cid).notNull(),
   useremail:varchar('useremail').references(()=>usersTable.email).notNull(),
   completedChapters:json()
 })

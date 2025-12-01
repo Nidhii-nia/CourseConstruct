@@ -7,20 +7,26 @@ import axios from "axios";
 import React, { useEffect, useState } from "react";
 
 function Provider({ children }) {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const [userDetail, setUserDetail] = useState();
   const [selectedChapterIndex, setSelectedChapterIndex] = useState(0);
+  
   useEffect(() => {
-    user && CreateNewUser();
-  }, [user]);
+    if (isLoaded && user && !userDetail) {
+      CreateNewUser();
+    }
+  }, [user, isLoaded, userDetail]);
 
   const CreateNewUser = async () => {
-    const result = await axios.post("/api/user", {
-      name: user?.fullName,
-      email: user?.primaryEmailAddress?.emailAddress,
-    });
-    console.log(result.data);
-    setUserDetail(result.data);
+    try {
+      const result = await axios.post("/api/user", {
+        name: user?.fullName,
+        email: user?.primaryEmailAddress?.emailAddress,
+      });
+      setUserDetail(result.data);
+    } catch (error) {
+      console.error("Error creating user:", error);
+    }
   };
 
   return (

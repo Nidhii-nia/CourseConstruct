@@ -1,99 +1,147 @@
 "use client";
 
+import { v4 as uuid4 } from "uuid";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
 import { Book, Clock, Loader2, PlaySquareIcon, Settings2Icon, TrendingUpDownIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
+import { startLoading, stopLoading } from "@/app/components/RouteLoader";
 
-// === Friendly Duration Formatter (generalized) ===
-function formatDurationFriendly(raw) {
-  if (!raw) return "N/A";
-  let str = String(raw).toLowerCase().trim();
-
+// === Duration Parser (returns minutes) ===
+function parseDurationToMinutes(duration) {
+  if (!duration) return 0;
+  
+  let str = String(duration).toLowerCase().trim();
+  
   // Numbers: treat as minutes
   if (/^\d+$/.test(str)) {
-    const min = parseInt(str, 10);
-    if (min < 60) return `${min} min`;
-    const hrs = Math.floor(min / 60);
-    const rem = min % 60;
-    return rem ? `${hrs} hr${hrs > 1 ? "s" : ""} ${rem} min` : `${hrs} hr${hrs > 1 ? "s" : ""}`;
+    return parseInt(str, 10);
   }
+  
   // 'minute(s)', 'min(s)'
   if (/(\d+)\s*(minute|min|minutes|mins)/.test(str)) {
     const match = str.match(/(\d+)\s*(minute|min|minutes|mins)/);
-    const min = parseInt(match[1], 10);
-    if (min < 60) return `${min} min`;
-    const hrs = Math.floor(min / 60);
-    const rem = min % 60;
-    return rem ? `${hrs} hr${hrs > 1 ? "s" : ""} ${rem} min` : `${hrs} hr${hrs > 1 ? "s" : ""}`;
+    return parseInt(match[1], 10);
   }
+  
   // 'hour(s)', 'hr(s)'
   if (/(\d+)\s*(hour|hr|hours|hrs)/.test(str)) {
     const match = str.match(/(\d+(\.\d+)?)\s*(hour|hr|hours|hrs)/);
-    const hrs = parseFloat(match[1]);
-    if (hrs === 1) return "1 hr";
-    return `${hrs} hrs`;
+    return Math.round(parseFloat(match[1]) * 60);
   }
+  
   // HH:MM or HH:MM:SS formats
   if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(str)) {
     const parts = str.split(":").map(Number);
-    const hrs = parts[0];
+    const hrs = parts[0] || 0;
     const min = parts[1] || 0;
-    if (hrs && min) return `${hrs} hr${hrs > 1 ? "s" : ""} ${min} min`;
-    if (hrs) return `${hrs} hr${hrs > 1 ? "s" : ""}`;
-    return `${min} min`;
+    return hrs * 60 + min;
   }
-  return raw;
+  
+  return 0;
 }
 
-function CourseInfo({ course,viewCourse }) {
+// === Friendly Duration Formatter ===
+function formatDurationFriendly(minutes) {
+  if (!minutes) return "N/A";
+  
+  if (minutes < 60) return `${minutes} min`;
+  
+  const hrs = Math.floor(minutes / 60);
+  const rem = minutes % 60;
+  
+  if (rem === 0) return `${hrs} hr${hrs > 1 ? "s" : ""}`;
+  return `${hrs} hr${hrs > 1 ? "s" : ""} ${rem} min`;
+}
+
+function CourseInfo({ course, viewCourse }) {
   const courseLayout = course?.courseJson?.course;
   const chapters = courseLayout?.chapters;
   const [loading, setLoading] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
   const router = useRouter();
+  const isMountedRef = useRef(true);
+
+  // Show loading while course data is being fetched - NO DELAY
+  useEffect(() => {
+    isMountedRef.current = true;
+    
+    if (course) {
+      setIsLoadingData(false);
+    } else {
+      setIsLoadingData(true);
+    }
+    
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [course]);
 
   const GenerateCourseContent = async () => {
+    // Prevent multiple clicks
+    if (loading) return;
+    
     setLoading(true);
+    startLoading();
+    
     try {
+      const clientRequestId = uuid4();
+
       const result = await axios.post("/api/generate-course-content", {
         courseJson: courseLayout,
         courseTitle: course?.name,
         courseId: course?.cid,
+        clientRequestId,
       });
-      setLoading(false);
-      router.replace('/workspace');
+
       toast.success("🎉 Content Generated Successfully!");
+      
+      // Only navigate if component is still mounted
+      if (isMountedRef.current) {
+        router.replace('/workspace');
+      }
     } catch (e) {
-      setLoading(false);
+      console.error("Generate content error:", e);
       toast.error("Server side error! Please try again.");
+    } finally {
+      // Only update state if component is still mounted
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
+      stopLoading(); // Direct call without delay
     }
   };
 
-  // Calculate total duration in minutes (parse all possible formats)
+  // Calculate total duration in minutes using parser
   const totalMinutes = chapters?.reduce((sum, chapter) => {
-    let dur = chapter.duration;
-    if (!dur) return sum;
-    dur = String(dur).toLowerCase().trim();
-    if (/^\d+$/.test(dur)) return sum + parseInt(dur, 10);
-    if (/(\d+)\s*(minute|min|minutes|mins)/.test(dur)) {
-      const match = dur.match(/(\d+)\s*(minute|min|minutes|mins)/);
-      return sum + parseInt(match[1]);
-    }
-    if (/(\d+)\s*(hour|hr|hours|hrs)/.test(dur)) {
-      const match = dur.match(/(\d+(\.\d+)?)\s*(hour|hr|hours|hrs)/);
-      return sum + Math.round(parseFloat(match[1]) * 60);
-    }
-    if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(dur)) {
-      const splits = dur.split(":");
-      return sum + (parseInt(splits[0]) * 60 + parseInt(splits[1]));
-    }
-    // fallback: ignore this chapter's duration
-    return sum;
-  }, 0);
+    return sum + parseDurationToMinutes(chapter.duration);
+  }, 0) || 0;
+
+  // Show loading spinner while course data is loading
+  if (isLoadingData || !course) {
+    return (
+      <div className="shadow-2xl border border-amber-950 rounded-2xl p-8">
+        <div className="flex flex-col lg:flex-row gap-8 items-center justify-center min-h-[300px]">
+          <div className="text-center lg:text-left">
+            <div className="relative mx-auto w-20 h-20 mb-6">
+              <div className="absolute inset-0 rounded-full border-4 border-amber-200"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-amber-500 border-t-transparent animate-spin"></div>
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                <Book className="w-8 h-8 text-amber-600" />
+              </div>
+            </div>
+            <h3 className="text-xl font-bold text-amber-800 mb-3">Loading Course Information</h3>
+            <p className="text-amber-600">Fetching course details...</p>
+          </div>
+          <div className="w-48 h-48 bg-linear-to-br from-amber-100 to-yellow-100 rounded-2xl animate-pulse"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col-reverse lg:flex-row gap-5 justify-between shadow-2xl border border-amber-950 rounded-2xl p-4">
@@ -123,26 +171,36 @@ function CourseInfo({ course,viewCourse }) {
             </section>
           </div>
         </div>
-{! viewCourse ?         <Button onClick={GenerateCourseContent} disabled={loading}>
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...
-            </>
-          ) : (
-            <>
-              <Settings2Icon className="w-4 h-4 mr-2" /> Generate Content
-            </>
-          )}
-        </Button> : <Link href={`/course/${course?.cid}`}><Button>
-          <PlaySquareIcon /> Resume Learning
-          </Button></Link>}
+        {!viewCourse ? (
+          <Button onClick={GenerateCourseContent} disabled={loading} className="relative">
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...
+                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                </span>
+              </>
+            ) : (
+              <>
+                <Settings2Icon className="w-4 h-4 mr-2" /> Generate Content
+              </>
+            )}
+          </Button>
+        ) : (
+          <Link href={`/course/${course?.cid}`}>
+            <Button className="bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700">
+              <PlaySquareIcon className="mr-2" /> Resume Learning
+            </Button>
+          </Link>
+        )}
       </div>
       <Image
         src={course?.bannerImgUrl}
         alt={"Banner Image"}
         width={400}
         height={400}
-        className="w-full h-60 rounded-2xl p-2 object-cover aspect-auto"
+        className="w-full h-60 rounded-2xl p-2 object-cover aspect-auto shadow-lg"
       />
     </div>
   );
