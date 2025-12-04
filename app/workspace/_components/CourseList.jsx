@@ -1,76 +1,49 @@
 "use client";
+
 import { Button } from "@/components/ui/button";
+import { PlusIcon, Loader2 } from "lucide-react";
 import Image from "next/image";
-import React, { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import AddNewCourseDialogue from "./AddNewCourseDialogue";
 import axios from "axios";
 import { useUser } from "@clerk/nextjs";
 import CourseCard from "./CourseCard";
-import { startLoading, stopLoading } from "@/app/components/RouteLoader";
 
 function CourseList() {
   const [courseList, setCourseList] = useState([]);
+  const [loading, setLoading] = useState(true);
   const { user } = useUser();
-  const [isLoading, setIsLoading] = useState(false);
-  const isMountedRef = useRef(true);
-
-  const fetchCourses = async () => {
-    // Prevent multiple simultaneous calls
-    if (isLoading) return;
-    
-    try {
-      setIsLoading(true);
-      startLoading();
-      
-      const { data } = await axios.get("/api/courses");
-      
-      // Only update state if component is still mounted
-      if (isMountedRef.current && data?.success) {
-        setCourseList(data.courses || []);
-        console.log("📚 Fetched Courses:", data.courses);
-      }
-    } catch (err) {
-      console.error("❌ Error fetching courses:", err);
-      // Don't update state on error if component unmounted
-    } finally {
-      if (isMountedRef.current) {
-        setIsLoading(false);
-      }
-      stopLoading(); // Direct call without delay
-    }
-  };
 
   useEffect(() => {
-    isMountedRef.current = true;
-    
-    // Only fetch courses if user exists
     if (user) {
-      fetchCourses();
+      GetCourseList();
+    } else {
+      setLoading(false);
     }
-    
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, [user]); // Only depend on user
+  }, [user]);
 
-  const handleCourseCreated = () => {
-    fetchCourses();
-  };
+  const GetCourseList = async () => {
+    try {
+      setLoading(true);
+      const result = await axios.get('/api/courses');
+      setCourseList(result.data.courses);
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+      setCourseList([]);
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  // Show loading state
-  if (isLoading && courseList.length === 0) {
+  // Show loading spinner
+  if (loading) {
     return (
-      <div className="w-full h-full p-4">
-        <h2 className="text-3xl font-bold text-emerald-950 dark:text-white mb-4">
-          Course List
-        </h2>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="relative mx-auto w-16 h-16 mb-4">
-              <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
-              <div className="absolute inset-0 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
-            </div>
-            <p className="text-gray-600 font-medium">Loading courses...</p>
+      <div>
+        <h2 className="text-2xl font-bold text-emerald-950 mt-5 mb-4">Course List</h2>
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="flex items-center gap-3">
+            <Loader2 className="h-6 w-6 animate-spin text-emerald-600" />
+            <span className="text-emerald-700 font-medium">Fetching Your Courses...</span>
           </div>
         </div>
       </div>
@@ -78,20 +51,40 @@ function CourseList() {
   }
 
   return (
-    <div className="w-full h-full">
-      <h2 className="text-3xl sm:text-3xl font-bold p-3 text-emerald-950 dark:text-white mb-3 sm:mb-4">
-        Course List
-      </h2>
+    <div>
+      <h2 className="text-2xl font-bold text-emerald-950 mt-5 mb-4">Course List</h2>
       
-      {courseList?.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-6 sm:py-8 px-4 sm:px-6 bg-linear-to-br from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-900 rounded-xl sm:rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-700 transition-all hover:border-purple-400 dark:hover:border-purple-600 min-h-[400px] sm:h-[calc(100vh-200px)] sm:max-h-[600px]">
-          {/* Content remains the same */}
-          {/* ... */}
+      {courseList?.length == 0 ? (
+        <div className="border-2 border-dashed border-emerald-900 p-2 rounded-2xl mt-2 bg-white/50">
+          <div className="flex flex-col items-center justify-center py-10 text-center">
+            <div className="mb-8">
+              <Image 
+                src="/learnpic.png" 
+                alt="No courses" 
+                width={200} 
+                height={200}
+                className="opacity-90"
+              />
+            </div>
+            <h2 className="text-xl font-semibold text-emerald-900 mb-3">
+              No courses created yet
+            </h2>
+            <p className="text-emerald-700 mb-10 max-w-md">
+              Get started by creating your first course to share knowledge
+            </p>
+            
+            <AddNewCourseDialogue>
+              <Button className="px-6 py-3">
+                <PlusIcon className="mr-2 h-4 w-4" />
+                Create Your First Course
+              </Button>
+            </AddNewCourseDialogue>
+          </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5">
-          {courseList.map((course, index) => (
-            <CourseCard course={course} key={course.cid || index} />
+        <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {courseList.map((course,index)=>(
+            <CourseCard course={course} key={index}/>
           ))}
         </div>
       )}

@@ -287,7 +287,7 @@ function AddNewCourseDialogue({ children }) {
           <Button
             onClick={onGenerate}
             disabled={isLoading}
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto ml-1"
           >
             {isLoading ? (
               <>

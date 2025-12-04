@@ -28,8 +28,8 @@ function EnrolledCourseCard({ course, enrolledCourse }) {
       "
     >
       <Image
-        src={course?.bannerImgUrl}
-        alt={course?.name}
+        src={course?.bannerImgUrl || '/books.png'}
+        alt={course?.name || "Course Banner"}
         width={320}
         height={180}
         className="w-full h-32 object-cover rounded-t-xl"

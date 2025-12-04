@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/config/db";
 import { coursesTable } from "@/config/schema";
 import { desc, eq } from "drizzle-orm";
-import { currentUser } from "@clerk/nextjs/server";
 
 export async function GET(req) {
   try {
@@ -16,46 +16,43 @@ export async function GET(req) {
     let result;
 
     if (courseId) {
-      console.log("🔍 Fetching course with ID:", courseId);
       result = await db
-        .select()
+        .select({
+          cid: coursesTable.cid,
+          name: coursesTable.name,
+          bannerImgUrl: coursesTable.bannerImgUrl,
+          noOfChapters: coursesTable.noOfChapters,
+          hasContent: coursesTable.hasContent,
+          courseJson: coursesTable.courseJson, // ✅ NEEDED for CourseInfo
+        })
         .from(coursesTable)
-        .where(eq(coursesTable.cid, courseId));
+        .where(eq(coursesTable.cid, courseId))
+        .limit(1);
     } else {
-      // Fetch all courses of the current user
+      if (!user?.primaryEmailAddress?.emailAddress) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers });
+      }
+
       result = await db
-        .select()
+        .select({
+          cid: coursesTable.cid,
+          name: coursesTable.name,
+          bannerImgUrl: coursesTable.bannerImgUrl,
+          noOfChapters: coursesTable.noOfChapters,
+          hasContent: coursesTable.hasContent,
+          courseJson: coursesTable.courseJson, // ✅ NEEDED for CourseCard
+        })
         .from(coursesTable)
-        .where(eq(coursesTable.useremail, user.primaryEmailAddress?.emailAddress))
-        .orderBy(desc(coursesTable.id));
+        .where(eq(coursesTable.useremail, user.primaryEmailAddress.emailAddress))
+        .orderBy(desc(coursesTable.id))
+        .limit(20);
     }
 
-    console.log("🔹 Query result:", result);
+    return NextResponse.json({
+      success: true,
+      courses: result || [],
+    }, { headers });
 
-    if (!result || result.length === 0) {
-      return NextResponse.json(
-        { success: false, error: "No courses found" },
-        { status: 404, headers }
-      );
-    }
-
-    // Make sure every courseContent is an array (not {}, null, or undefined)
-    const normalizedResult = result.map(course => ({
-      ...course,
-      courseContent: Array.isArray(course.courseContent)
-        ? course.courseContent
-        : [],
-    }));
-    console.log("API Normalized Response:", normalizedResult);
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Courses fetched successfully",
-        courses: normalizedResult,
-      },
-      { status: 200, headers }
-    );
   } catch (error) {
     console.error("❌ Error fetching courses:", error);
     return NextResponse.json(
@@ -65,6 +62,76 @@ export async function GET(req) {
   }
 }
 
-export function POST() {
-  return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
-}
+
+
+// import { NextResponse } from "next/server";
+// import { currentUser } from "@clerk/nextjs/server";
+// import { db } from "@/config/db";
+// import { coursesTable } from "@/config/schema";
+// import { desc, eq } from "drizzle-orm";
+
+// export async function GET(req) {
+//   try {
+//     const headers = new Headers();
+//     headers.set("Cache-Control", "no-store, max-age=0");
+
+//     const { searchParams } = new URL(req.url);
+//     const courseId = searchParams?.get("courseId");
+//     const user = await currentUser();
+
+//     let result;
+
+//     if (courseId) {
+//       console.log("🔍 Fetching course with ID:", courseId);
+//       result = await db
+//         .select({
+//           id: coursesTable.id,
+//           cid: coursesTable.cid,
+//           name: coursesTable.name,
+//           description: coursesTable.description,
+//           noOfChapters: coursesTable.noOfChapters,
+//           courseJson: coursesTable.courseJson,
+//           bannerImgUrl: coursesTable.bannerImgUrl,
+//           useremail: coursesTable.useremail,
+//           hasContent:coursesTable.hasContent,
+//         })
+//         .from(coursesTable)
+//         .where(eq(coursesTable.cid, courseId))
+//         .limit(1);
+//     } else {
+//       if (!user?.primaryEmailAddress?.emailAddress) {
+//         return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers });
+//       }
+
+//       result = await db
+//         .select({
+//           id: coursesTable.id,
+//           cid: coursesTable.cid,
+//           name: coursesTable.name,
+//           description: coursesTable.description,
+//           noOfChapters: coursesTable.noOfChapters,
+//           courseJson: coursesTable.courseJson,
+//           bannerImgUrl: coursesTable.bannerImgUrl,
+//           useremail: coursesTable.useremail,
+//           hasContent: coursesTable.hasContent, 
+//         })
+//         .from(coursesTable)
+//         .where(eq(coursesTable.useremail, user.primaryEmailAddress.emailAddress))
+//         .orderBy(desc(coursesTable.id))
+//         .limit(20);
+//     }
+
+//     return NextResponse.json({
+//       success: true,
+//       message: result.length === 0 ? "No courses found" : "Courses fetched successfully",
+//       courses: result || [],
+//     }, { headers });
+
+//   } catch (error) {
+//     console.error("❌ Error fetching courses:", error);
+//     return NextResponse.json(
+//       { success: false, error: error.message },
+//       { status: 500 }
+//     );
+//   }
+// }

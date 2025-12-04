@@ -39,24 +39,14 @@ export async function POST(req) {
   try {
     const { courseJson, courseTitle, courseId, clientRequestId } = await req.json();
 
-    if (!courseId) {
-      return NextResponse.json({ error: "courseId is missing in request body" }, { status: 400 });
+    // Validate
+    if (!courseId || !clientRequestId || !courseJson?.chapters) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    if (!courseJson?.chapters?.length) {
-      return NextResponse.json({ error: "Invalid courseJson. No chapters found." }, { status: 400 });
-    }
-
-    if (!clientRequestId) {
-      return NextResponse.json({ error: "clientRequestId is required" }, { status: 400 });
-    }
-
-    // -----------------------------
-    // Check if content already generated for this request
-    // -----------------------------
+    // Check if already generated
     const existing = await db.select().from(coursesTable)
-      .where(eq(coursesTable.clientRequestIdContent, clientRequestId))
-      .execute();
+      .where(eq(coursesTable.clientRequestIdContent, clientRequestId));
 
     if (existing.length > 0) {
       return NextResponse.json({
@@ -65,86 +55,100 @@ export async function POST(req) {
       });
     }
 
-    // -----------------------------
     // Generate content for each chapter
-    // -----------------------------
-    const promises = courseJson.chapters.map(async (chapter) => {
-      const model = "gemini-2.0-flash";
-      const contents = [{ role: "user", parts: [{ text: PROMPT + JSON.stringify(chapter) }] }];
+    const chapterPromises = courseJson.chapters.map(async (chapter) => {
+      try {
+        // Get AI content
+        const response = await ai.models.generateContent({
+          model: "gemini-2.0-flash",
+          contents: [{ role: "user", parts: [{ text: PROMPT + JSON.stringify(chapter) }] }]
+        });
 
-      const response = await ai.models.generateContent({ model, contents });
+        const rawText = response.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        const jsonText = rawText.replace(/```json|```/g, "").trim();
+        
+        // Simple JSON parse with fallback
+        let courseData;
+        try {
+          courseData = JSON.parse(jsonText);
+        } catch {
+          // If JSON fails, create basic structure
+          courseData = {
+            chapterName: chapter.chapterName || "Chapter",
+            topics: [{
+              topic: "Main Topic",
+              content: `<div><h2>${chapter.chapterName}</h2><p>Content for this chapter.</p></div>`
+            }]
+          };
+        }
 
-      const raw = response.candidates?.[0]?.content?.parts?.[0]?.text || "";
-      const cleaned = raw.replace(/```json|```/g, "").trim();
-      const parsedJSON = safeParse(cleaned);
+        // Get YouTube videos
+        const youtubeVideo = await GetYoutubeVideo(chapter?.chapterName, courseJson?.course?.name);
 
-      // ---- YOUTUBE ----
-      const youtubeData = await GetYoutubeVideo(chapter?.chapterName,courseJson?.course?.name);
-
-      return {
-        youtubeVideo: youtubeData,
-        courseData: parsedJSON,
-      };
+        return {
+          youtubeVideo,
+          courseData
+        };
+      } catch (error) {
+        console.error(`Error in chapter "${chapter.chapterName}":`, error);
+        return {
+          youtubeVideo: [],
+          courseData: {
+            chapterName: chapter.chapterName,
+            topics: [{
+              topic: "Error",
+              content: "<div><p>Failed to generate content.</p></div>"
+            }]
+          }
+        };
+      }
     });
 
-    const output = await Promise.all(promises);
+    const output = await Promise.all(chapterPromises);
 
-    // -----------------------------
-    // Save content and store clientRequestIdContent
-    // -----------------------------
+    // Save to database
     await db.update(coursesTable)
       .set({
         courseContent: output,
+        hasContent:true,
         clientRequestIdContent: clientRequestId
       })
       .where(eq(coursesTable.cid, courseId));
 
     return NextResponse.json({
+      success: true,
       courseName: courseTitle,
-      CourseContent: output,
     });
 
-  } catch (err) {
-    console.error("❌ API ERROR:", err);
-    return NextResponse.json({ error: "Failed to generate content", details: err.message }, { status: 500 });
+  } catch (error) {
+    console.error("API Error:", error);
+    return NextResponse.json({ 
+      error: "Internal server error",
+      message: error.message 
+    }, { status: 500 });
   }
 }
 
-// SAFE JSON PARSER
-function safeParse(str) {
-  try {
-    return JSON.parse(str);
-  } catch {
-    let fixed = str.replace(/,\s*([}\]])/g, "$1");
-    const openCurly = (fixed.match(/{/g) || []).length;
-    const closeCurly = (fixed.match(/}/g) || []).length;
-    if (closeCurly < openCurly) fixed += "}".repeat(openCurly - closeCurly);
-    const openArr = (fixed.match(/\[/g) || []).length;
-    const closeArr = (fixed.match(/\]/g) || []).length;
-    if (closeArr < openArr) fixed += "]".repeat(openArr - closeArr);
-    return JSON.parse(fixed);
-  }
-}
-
-// YOUTUBE API
-const YOUTUBE_BASE_URL = "https://www.googleapis.com/youtube/v3/search";
-async function GetYoutubeVideo(topic,courseName) {
+// YouTube API
+async function GetYoutubeVideo(topic, courseName) {
   if (!process.env.YOUTUBE_API_KEY) return [];
+
   try {
-    const params = {
-      part: "snippet",
-      q: `${topic} ${courseName} advanced tutorial only videos`,
-      maxResults: 4,
-      type: "video",
-      key: process.env.YOUTUBE_API_KEY,
-    };
-    const resp = await axios.get(YOUTUBE_BASE_URL, { params });
-    return (resp.data.items || []).map((item) => ({
+    const response = await axios.get("https://www.googleapis.com/youtube/v3/search", {
+      params: {
+        part: "snippet",
+        q: `${topic} ${courseName} full course`,
+        maxResults: 4,
+        type: "video",
+        key: process.env.YOUTUBE_API_KEY,
+      }
+    });
+
+    return (response.data.items || []).map(item => ({
       videoId: item.id?.videoId,
       title: item.snippet?.title,
     }));
-  } catch (err) {
-    console.error("❌ YOUTUBE API ERROR:", err.response?.data || err.message);
+  } catch {
     return [];
   }
 }

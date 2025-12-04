@@ -95,7 +95,7 @@ export async function PUT(req) {
 
     const result = await db.update(enrollCourseTable)
       .set({
-        completedChapters // ✅ Save as plural (matches schema)
+        completedChapters
       })
       .where(
         and(
@@ -114,4 +114,4 @@ export async function PUT(req) {
     console.error("❌ Enroll PUT error:", err);
     return NextResponse.json({ error: "Failed to update completion" }, { status: 500 });
   }
-}
+} 

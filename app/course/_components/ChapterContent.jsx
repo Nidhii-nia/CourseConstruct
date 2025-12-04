@@ -2,7 +2,8 @@
 
 import React, { useContext, useRef, useState, useEffect } from "react";
 import { SelectedChapterIndexContext } from "@/context/SelectedChapterIndexContext";
-import { CheckCircle, Cross, Video, X, Loader2, CrossIcon } from "lucide-react";
+import { useSidebar } from "@/context/SidebarContext";
+import { CheckCircle, Video, Loader2, CrossIcon } from "lucide-react";
 import YouTube from "react-youtube";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
@@ -14,6 +15,7 @@ function ChapterContent({ courseInfo, topicRefs, refreshData }) {
   const { courses, enrollCourse } = courseInfo ?? {};
   const courseContent = courseInfo?.courses?.courseContent;
   const { selectedChapterIndex } = useContext(SelectedChapterIndexContext);
+  const { isCollapsed } = useSidebar();
 
   const chapter = courseContent?.[selectedChapterIndex]?.courseData;
   const videoData = courseContent?.[selectedChapterIndex]?.youtubeVideo;
@@ -23,19 +25,17 @@ function ChapterContent({ courseInfo, topicRefs, refreshData }) {
   const [completing, setCompleting] = useState(false);
   const [incompleting, setIncompleting] = useState(false);
   
-  // Component loading state
-  const [isLoading, setIsLoading] = useState(true);
-
+  // LOCAL STATE for immediate button change
+  const [localIsCompleted, setLocalIsCompleted] = useState(false);
+  
   const playersRef = useRef([]);
 
-  // Show loader when courseInfo is not available yet - REMOVED TIMEOUT
+  // Update local state when selected chapter or courseInfo changes
   useEffect(() => {
-    if (courseInfo) {
-      setIsLoading(false);
-    } else {
-      setIsLoading(true);
-    }
-  }, [courseInfo]);
+    const completedChapters = enrollCourse?.completedChapters ?? [];
+    const isCompleted = completedChapters?.includes(selectedChapterIndex);
+    setLocalIsCompleted(isCompleted);
+  }, [selectedChapterIndex, enrollCourse]);
 
   const handlePlay = (playingIndex) => {
     playersRef.current.forEach((player, i) => {
@@ -47,57 +47,47 @@ function ChapterContent({ courseInfo, topicRefs, refreshData }) {
     playersRef.current[index] = event.target;
   };
 
-  const completedChapters = enrollCourse?.completedChapters ?? [];
-
   const markChapterCompleted = async () => {
-    // Prevent multiple clicks
     if (completing || incompleting) return;
     
     setCompleting(true);
     
     try {
-      // Get current state for potential rollback
-      const currentCompletedChapters = [...completedChapters];
+      // INSTANT: Change button state
+      setLocalIsCompleted(true);
       
-      // Create optimistic update
-      const optimisticUpdated = [...currentCompletedChapters];
-      if (!optimisticUpdated.includes(selectedChapterIndex)) {
-        optimisticUpdated.push(selectedChapterIndex);
-      }
+      // Get current completed chapters
+      const completedChapters = enrollCourse?.completedChapters ?? [];
+      const updatedChapters = [...completedChapters, selectedChapterIndex];
       
-      // Create optimistic course info
-      const optimisticCourseInfo = {
-        ...courseInfo,
-        enrollCourse: {
-          ...courseInfo?.enrollCourse,
-          completedChapters: optimisticUpdated
-        }
-      };
-      
-      // Update UI immediately with optimistic data
-      refreshData(optimisticCourseInfo);
-      
-      // Make API call in background
-      await axios.put("/api/enroll-course", {
+      // Call API in background
+      axios.put("/api/enroll-course", {
         courseId,
-        completedChapters: optimisticUpdated,
+        completedChapters: updatedChapters,
+      })
+      .then(() => {
+        toast.success("Marked as Completed!");
+        // Refresh parent in background
+        if (refreshData) {
+          refreshData({
+            ...courseInfo,
+            enrollCourse: {
+              ...courseInfo?.enrollCourse,
+              completedChapters: updatedChapters
+            }
+          });
+        }
+      })
+      .catch((error) => {
+        console.error("API Error:", error);
+        // Revert on error
+        setLocalIsCompleted(false);
+        toast.error("Failed to save");
       });
       
-      toast.success("Marked as Completed!");
-      
     } catch (error) {
-      console.error("Error marking complete:", error);
-      
-      // On error, revert to original state
-      const originalCourseInfo = {
-        ...courseInfo,
-        enrollCourse: {
-          ...courseInfo?.enrollCourse,
-          completedChapters: completedChapters
-        }
-      };
-      refreshData(originalCourseInfo);
-      
+      console.error("Error:", error);
+      setLocalIsCompleted(false);
       toast.error("Failed to mark as completed");
     } finally {
       setCompleting(false);
@@ -105,83 +95,75 @@ function ChapterContent({ courseInfo, topicRefs, refreshData }) {
   };
 
   const markIncompleteChapter = async () => {
-    // Prevent multiple clicks
     if (incompleting || completing) return;
     
     setIncompleting(true);
     
     try {
-      // Get current state for potential rollback
-      const currentCompletedChapters = [...completedChapters];
+      // INSTANT: Change button state
+      setLocalIsCompleted(false);
       
-      // Create optimistic update
-      const optimisticUpdated = currentCompletedChapters.filter(
+      // Get current completed chapters
+      const completedChapters = enrollCourse?.completedChapters ?? [];
+      const updatedChapters = completedChapters.filter(
         (item) => item !== selectedChapterIndex
       );
       
-      // Create optimistic course info
-      const optimisticCourseInfo = {
-        ...courseInfo,
-        enrollCourse: {
-          ...courseInfo?.enrollCourse,
-          completedChapters: optimisticUpdated
-        }
-      };
-      
-      // Update UI immediately with optimistic data
-      refreshData(optimisticCourseInfo);
-      
-      // Make API call in background
-      await axios.put("/api/enroll-course", {
+      // Call API in background
+      axios.put("/api/enroll-course", {
         courseId,
-        completedChapters: optimisticUpdated,
+        completedChapters: updatedChapters,
+      })
+      .then(() => {
+        toast.success("Marked as Incomplete!");
+        // Refresh parent in background
+        if (refreshData) {
+          refreshData({
+            ...courseInfo,
+            enrollCourse: {
+              ...courseInfo?.enrollCourse,
+              completedChapters: updatedChapters
+            }
+          });
+        }
+      })
+      .catch((error) => {
+        console.error("API Error:", error);
+        // Revert on error
+        setLocalIsCompleted(true);
+        toast.error("Failed to save");
       });
       
-      toast.success("Marked as Incomplete!");
-      
     } catch (error) {
-      console.error("Error marking incomplete:", error);
-      
-      // On error, revert to original state
-      const originalCourseInfo = {
-        ...courseInfo,
-        enrollCourse: {
-          ...courseInfo?.enrollCourse,
-          completedChapters: completedChapters
-        }
-      };
-      refreshData(originalCourseInfo);
-      
+      console.error("Error:", error);
+      setLocalIsCompleted(true);
       toast.error("Failed to mark as incomplete");
     } finally {
       setIncompleting(false);
     }
   };
 
-  // Determine if chapter is completed (using current optimistic state)
-  const isChapterCompleted = completedChapters?.includes(selectedChapterIndex);
-
-  // Show loading spinner while data is loading
-  if (isLoading || !courseInfo) {
+  // Show loading only if no courseInfo at all
+  if (!courseInfo) {
     return (
-      <div className="ml-0 lg:p-12 w-full flex items-center justify-center min-h-[400px]">
+      <div className={`${isCollapsed ? 'ml-5' : 'ml-5 lg:ml-80'} transition-all duration-300 w-full flex items-center justify-center min-h-[400px]`}>
         <div className="text-center">
           <div className="relative mx-auto w-16 h-16 mb-4">
             <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
             <div className="absolute inset-0 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
           </div>
-          <p className="text-gray-600 font-medium">Loading chapter content...</p>
-          <p className="text-gray-400 text-sm mt-2">Preparing your learning materials</p>
+          <p className="text-gray-600 font-medium">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="ml-0 lg:ml-80 transition-all duration-300">
-      <div className="p-4 md:p-8 lg:p-10 xl:p-12 space-y-6 md:space-y-8 w-full max-w-full">
-        {/* Chapter Title */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+    <div className={`${isCollapsed ? 'ml-17' : 'ml-17 lg:ml-80'} transition-all duration-300`}>
+      {/* Main content container with responsive width */}
+      <div className={`${isCollapsed ? 'max-w-7xl mx-auto px-4 md:px-8' : ''} p-4 md:p-8 lg:p-10 xl:p-12 space-y-6 md:space-y-8 w-full`}>
+        {/* Chapter Title Section */}
+        <div className={`${isCollapsed ? 'max-w-6xl mx-auto' : ''} flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4`}>
           <div className="flex-1">
             <h2 className="text-2xl md:text-3xl font-extrabold text-primary flex items-start gap-2">
               <span className="line-clamp-2 wrap-break-word">
@@ -192,19 +174,17 @@ function ChapterContent({ courseInfo, topicRefs, refreshData }) {
 
           {/* Mark Complete/Incomplete Buttons */}
           <div className="shrink-0 self-start">
-            {!isChapterCompleted ? (
+            {!localIsCompleted ? (
               <Button 
                 onClick={markChapterCompleted} 
-                disabled={completing || incompleting}
-                className={`w-full sm:w-auto min-w-40 transition-all duration-200 ${
-                  completing ? 'bg-green-600' : ''
-                }`}
+                disabled={completing}
+                className={`w-full sm:w-auto min-w-40`}
                 size="sm"
               >
                 {completing ? (
                   <span className="flex items-center justify-center gap-2">
                     <Loader2 className="w-3 h-3 animate-spin" />
-                    Saving...
+                    Marking...
                   </span>
                 ) : (
                   <span className="flex items-center justify-center gap-2">
@@ -217,13 +197,13 @@ function ChapterContent({ courseInfo, topicRefs, refreshData }) {
               <Button 
                 className={'bg-green-600 hover:bg-green-700 w-full sm:w-auto min-w-40'} 
                 onClick={markIncompleteChapter}
-                disabled={incompleting || completing}
+                disabled={incompleting}
                 size="sm"
               >
                 {incompleting ? (
                   <span className="flex items-center justify-center gap-2">
                     <Loader2 className="w-3 h-3 animate-spin" />
-                    Updating...
+                    Marking...
                   </span>
                 ) : (
                   <span className="flex items-center justify-center gap-2">
@@ -236,17 +216,17 @@ function ChapterContent({ courseInfo, topicRefs, refreshData }) {
           </div>
         </div>
 
-        <div className="h-px bg-border w-full" />
+        <div className={`${isCollapsed ? 'max-w-6xl mx-auto' : ''} h-px bg-border w-full`} />
 
-        {/* Related Videos */}
-        <div className="space-y-4">
+        {/* Related Videos Section - Responsive columns */}
+        <div className={`${isCollapsed ? 'max-w-6xl mx-auto' : ''} space-y-4`}>
           <h3 className="text-lg md:text-xl font-semibold flex items-center gap-2">
             Related Videos
             <Video className="w-4 h-4 md:w-5 md:h-5 text-primary" />
           </h3>
 
           {videoData?.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+            <div className={`grid ${isCollapsed ? 'grid-cols-1 lg:grid-cols-3 gap-6' : 'grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6'}`}>
               {videoData.map((video, index) => (
                 <div
                   key={index}
@@ -287,7 +267,8 @@ function ChapterContent({ courseInfo, topicRefs, refreshData }) {
           )}
         </div>
 
-        <div className="mt-8 md:mt-10 lg:mt-12 space-y-6 md:space-y-8 lg:space-y-10">
+        {/* Topics Section */}
+        <div className={`${isCollapsed ? 'max-w-6xl mx-auto' : ''} mt-8 md:mt-10 lg:mt-12 space-y-6 md:space-y-8 lg:space-y-10`}>
           {topics?.map((topic, index) => (
             <div
               key={index}

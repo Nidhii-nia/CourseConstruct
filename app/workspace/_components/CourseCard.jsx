@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import axios from "axios";
 import { Book, LoaderCircle, PlaySquareIcon, Plus } from "lucide-react";
@@ -20,67 +22,29 @@ function CourseCard({ course }) {
       
       const result = await axios.post('/api/enroll-course', {
         courseId: course?.cid
-      }, {
-        validateStatus: (status) => status < 500 // Accept 409 as valid response
       });
       
-      console.log("Enrollment response:", result);
-      
-      // Simplified response handling
-      const isAlreadyEnrolled = result.status === 409 || 
-                                result.data?.response === "Already enrolled";
-      
-      if (isAlreadyEnrolled) {
-        toast.warning("Already Enrolled to this course!");
-      } else if (result.status === 200 || 
-                 result.status === 201 || 
-                 result.data?.success || 
-                 result.data?.enrolledCourse) {
+      if (result.status === 409) {
+        toast.warning("Already enrolled!");
+      } else {
         toast.success('🎉 Successfully Enrolled!');
         
-        // Optional: Show a message about where to find it
-        setTimeout(() => {
-          toast.info("Course added to 'Continue Learning' section!");
-        }, 500);
-      } else {
-        // Handle other successful responses
-        toast.success('🎉 Enrolled!');
+        // SIMPLE: Just refresh once
+        triggerRefresh();
       }
-      
-      // Always trigger refresh regardless of enrollment status
-      triggerRefresh();
       
     } catch (e) {
-      console.error("Enrollment error:", e);
-      
-      // Only handle network errors here, since 409 is handled in try block
-      if (e.response?.status === 400) {
-        toast.error("Bad request. Please try again.");
-      } else if (e.response?.status === 401) {
-        toast.error("Please login to enroll.");
-      } else if (e.response?.status === 500) {
-        toast.error("Server error. Please try again later.");
-      } else {
-        toast.error('Failed to enroll. Please try again.');
-      }
+      toast.error('Failed to enroll');
     } finally {
       setLoading(false);
-      stopLoading(); // Removed setTimeout
+      stopLoading();
     }
   };
 
   return (
-    <div
-      className="
-        group shadow-lg rounded-xl bg-emerald-950 
-        border border-emerald-700/30
-        max-w-xs
-        transition-all transform hover:scale-[1.06] hover:shadow-emerald-700/80
-        duration-150
-      "
-    >
+    <div className="group shadow-lg rounded-xl bg-emerald-950 border border-emerald-700/30 max-w-xs transition-all transform hover:scale-[1.02] hover:shadow-emerald-700/80 duration-150">
       <Image
-        src={course?.bannerImgUrl}
+        src={course?.bannerImgUrl || "/books.png"}
         alt={course?.name}
         width={320}
         height={180}
@@ -88,26 +52,26 @@ function CourseCard({ course }) {
       />
       <div className="p-4 flex flex-col gap-2">
         <h2 className="text-lg font-semibold text-emerald-100 leading-tight">
-          {courseJson?.name}
+          {courseJson?.name || course?.name}
         </h2>
         <p className="line-clamp-3 text-emerald-300 text-sm">
-          {courseJson?.description}
+          {courseJson?.description || course?.description}
         </p>
         <div className="flex justify-between items-center mt-2">
           <span className="flex items-center gap-1 text-emerald-400 text-sm">
-            <Book size={16} /> {courseJson?.noOfChapters}{" "}
-            {courseJson?.noOfChapters > 1 ? "Chapters" : "Chapter"}
+            <Book size={16} /> {course?.noOfChapters || 0}{" "}
+            {course?.noOfChapters > 1 ? "Chapters" : "Chapter"}
           </span>
-          {course?.courseContent?.length ? (
+          {course?.hasContent ? (
             <Button
-              className="bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-1 rounded-md text-sm flex items-center gap-2 shadow"
+              className="bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-1 rounded-md text-sm flex items-center gap-2"
               onClick={onEnrollCourse}
               disabled={loading}
             >
               {loading ? (
                 <>
                   <LoaderCircle className="animate-spin" size={16} /> 
-                  <span className="ml-1">Enrolling...</span>
+                  <span>Enrolling...</span>
                 </>
               ) : (
                 <>
@@ -119,14 +83,9 @@ function CourseCard({ course }) {
             <Link href={`/workspace/edit-course/${course?.cid}`}>
               <Button
                 size="sm"
-                className="
-                  bg-emerald-700 hover:bg-emerald-600
-                  text-white
-                  border-0
-                  flex items-center gap-2
-                "
+                className="bg-emerald-700 hover:bg-emerald-600 text-white border-0"
               >
-                <Plus /> Generate Course
+                <Plus /> Generate
               </Button>
             </Link>
           )}

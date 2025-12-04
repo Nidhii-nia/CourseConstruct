@@ -6,9 +6,10 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { SelectedChapterIndexContext } from "@/context/SelectedChapterIndexContext";
+import { useSidebar } from "@/context/SidebarContext";
 import { CheckCircle, ChevronLeft, ChevronRight, Menu, Clock, BookOpen } from "lucide-react";
 
-export default function ChapterListSidebar({ courseInfo, topicRefs, onCollapseChange }) {
+export default function ChapterListSidebar({ courseInfo, topicRefs }) {
   const courseContent = useMemo(() => 
     courseInfo?.courses?.courseContent, 
     [courseInfo]
@@ -19,8 +20,8 @@ export default function ChapterListSidebar({ courseInfo, topicRefs, onCollapseCh
   );
   const { enrollCourse } = courseInfo ?? {};
   
-  // State for sidebar collapse
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  // Use the sidebar context
+  const { isCollapsed, setIsCollapsed } = useSidebar();
   const [isMobile, setIsMobile] = useState(false);
 
   // Check if mobile on mount and resize
@@ -38,7 +39,7 @@ export default function ChapterListSidebar({ courseInfo, topicRefs, onCollapseCh
     }
     
     return () => window.removeEventListener('resize', checkMobile);
-  }, [isMobile]);
+  }, [isMobile, setIsCollapsed]);
 
   const handleTopicClick = (index) => {
     if (topicRefs?.current?.[index]) {
@@ -58,7 +59,6 @@ export default function ChapterListSidebar({ courseInfo, topicRefs, onCollapseCh
   const calculateChapterProgress = (chapterIndex) => {
     const chapter = courseContent?.[chapterIndex];
     const totalTopics = chapter?.courseData?.topics?.length || 0;
-    // Assuming you have completed topics data - adjust based on your data structure
     const completedTopics = enrollCourse?.completedTopics?.[chapterIndex]?.length || 0;
     return totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 0;
   };
@@ -68,13 +68,11 @@ export default function ChapterListSidebar({ courseInfo, topicRefs, onCollapseCh
     return (
       <div className="fixed top-0 left-0 w-80 p-6 border-r border-emerald-200 h-screen overflow-y-auto bg-white">
         <div className="animate-pulse space-y-4">
-          {/* Sidebar header skeleton */}
           <div className="flex justify-between items-center mb-6">
             <div className="h-6 w-32 bg-gray-200 rounded"></div>
             <div className="h-8 w-8 bg-gray-200 rounded-lg"></div>
           </div>
           
-          {/* Chapter skeletons */}
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="h-24 bg-gray-200 rounded-xl"></div>
           ))}
@@ -297,7 +295,6 @@ export default function ChapterListSidebar({ courseInfo, topicRefs, onCollapseCh
                 <div className="space-y-2 px-4 pb-4">
                   {chapter.courseData?.topics?.length > 0 ? (
                     chapter.courseData.topics.map((topic, tIndex) => {
-                      // Check if this topic is completed (adjust based on your data structure)
                       const isTopicCompleted = enrollCourse?.completedTopics?.[index]?.includes(tIndex);
                       
                       return (
@@ -341,7 +338,6 @@ export default function ChapterListSidebar({ courseInfo, topicRefs, onCollapseCh
           );
         })}
       </Accordion>
-      
     </div>
   );
 }

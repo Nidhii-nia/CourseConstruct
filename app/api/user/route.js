@@ -22,7 +22,6 @@ export async function POST(req) {
     if (users.length === 0) {
       // 🧩 Insert new user
       const [result] = await db.insert(usersTable).values({ name, email }).returning();
-      console.log("✅ User inserted:", result);
       return NextResponse.json(result, { status: 200 });
     }
 
