@@ -7,7 +7,8 @@ import {
 } from "@/components/ui/accordion";
 import { SelectedChapterIndexContext } from "@/context/SelectedChapterIndexContext";
 import { useSidebar } from "@/context/SidebarContext";
-import { CheckCircle, ChevronLeft, ChevronRight, Menu, Clock, BookOpen } from "lucide-react";
+import { CheckCircle, ChevronLeft, ChevronRight, Menu, Clock, BookOpen, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 export default function ChapterListSidebar({ courseInfo, topicRefs }) {
   const courseContent = useMemo(() => 
@@ -96,6 +97,16 @@ export default function ChapterListSidebar({ courseInfo, topicRefs }) {
   if (isCollapsed) {
     return (
       <div className="fixed top-0 bg-white left-0 w-16 p-4 border-r border-emerald-200 h-screen overflow-y-auto flex flex-col items-center z-40 shadow-sm">
+        {/* Back to workspace button */}
+        <Link 
+          href="/workspace"
+          className="mb-3 p-2 rounded-lg hover:bg-emerald-100 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 group"
+          title="Back to Workspace"
+          aria-label="Navigate back to workspace"
+        >
+          <ArrowLeft className="w-5 h-5 text-emerald-700 group-hover:-translate-x-0.5 transition-transform" />
+        </Link>
+
         {/* Expand button */}
         <button
           onClick={() => setIsCollapsed(false)}
@@ -186,6 +197,17 @@ export default function ChapterListSidebar({ courseInfo, topicRefs }) {
   // Full expanded sidebar
   return (
     <div className="fixed top-0 bg-white left-0 w-80 p-6 border-r border-emerald-200 h-screen overflow-y-auto no-scrollbar transition-all duration-300 z-40 shadow-lg">
+      {/* Back to workspace button */}
+      <div className="mb-4">
+        <Link 
+          href="/workspace"
+          className="inline-flex items-center gap-2 px-4 py-2 text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50 rounded-lg transition-colors group font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+        >
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+          Back to Workspace
+        </Link>
+      </div>
+
       {/* Sidebar header with collapse button */}
       <div className="flex justify-between items-center mb-6 pb-4 border-b border-emerald-100">
         <div>

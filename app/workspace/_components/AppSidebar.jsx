@@ -15,12 +15,8 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
   AlbumIcon,
-  Book,
-  BookCheck,
   DraftingCompass,
-  Icon,
   LayoutPanelLeft,
-  PencilLine,
   ReceiptIndianRupee,
   UserCog,
 } from "lucide-react";
@@ -37,12 +33,12 @@ const SideBarOptions = [
   {
     title: "My Library",
     icon: AlbumIcon,
-    path: "/workspace/my-courses",
+    path: "/workspace/my-library",
   },
   {
     title: "Explore Courses",
     icon: DraftingCompass,
-    path: "/workspace/explore",
+    path: "/workspace/explore-courses",
   },
   {
     title: "Billing",

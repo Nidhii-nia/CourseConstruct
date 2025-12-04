@@ -2,13 +2,12 @@
   "name": "my-app",
   "version": "0.1.0",
   "private": true,
-"scripts": {
-  "dev": "next dev --turbo",
-  "dev-webpack": "next dev --webpack",
-  "build": "next build",
-  "start": "next start"
-}
-,
+  "scripts": {
+    "dev": "next dev --turbo",
+    "dev-webpack": "next dev --webpack",
+    "build": "next build",
+    "start": "next start"
+  },
   "dependencies": {
     "@clerk/nextjs": "^6.34.1",
     "@google/genai": "^1.29.0",
@@ -30,6 +29,7 @@
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.44.7",
     "framer-motion": "^12.23.24",
+    "lodash": "^4.17.21",
     "lucide-react": "^0.552.0",
     "mime": "^4.1.0",
     "next": "^16.0.6",

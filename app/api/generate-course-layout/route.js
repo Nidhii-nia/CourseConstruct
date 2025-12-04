@@ -1,6 +1,6 @@
 import { db } from "@/config/db";
 import { coursesTable } from "@/config/schema";
-import { currentUser } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 import { v4 as uuid4 } from "uuid";
@@ -66,6 +66,10 @@ export async function POST(req) {
       formData.includeVideo = false;
 
     const user = await currentUser();
+
+    const { has } = await auth();
+    const hasPremiumAccess = has({plan: 'premium'})
+
     if (!user) {
       return NextResponse.json(
         { error: "Unauthorized - User not logged in" },
@@ -117,6 +121,16 @@ export async function POST(req) {
 
     let retries = 3;
     let rawText = "";
+
+    //If user already created any course?
+    if(!hasPremiumAccess){
+      const result = await db.select().from(coursesTable)
+      .where(eq(coursesTable.useremail,user?.primaryEmailAddress?.emailAddress));
+
+      if(result?.length>=1){
+        return NextResponse.json({'resp': 'limit exceeded'})
+      }
+    }
 
     while (retries > 0) {
       try {

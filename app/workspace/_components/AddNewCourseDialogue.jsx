@@ -112,6 +112,11 @@ function AddNewCourseDialogue({ children }) {
         }
       );
 
+      if(result.data.resp == 'limit exceeded'){
+        toast.warning('Limit exceeded switch to Premium!')
+        router.push('/workspace/billing')
+      }
+
       if (result?.data?.success) {
         toast.success("🎉 Course Layout generated successfully!");
         
