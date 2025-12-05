@@ -8,21 +8,26 @@ import axios from 'axios'
 import { Loader2 } from 'lucide-react'
 
 function MyLibrary() {
-  const { user } = useUser()
+  const { isLoaded, user } = useUser() // ADD isLoaded
   const [enrolledCourses, setEnrolledCourses] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (user) {
+    // MODIFY: Check both isLoaded and user
+    if (isLoaded && user) {
       fetchEnrolledCourses()
+    } else if (isLoaded && !user) {
+      // Auth loaded but no user = not signed in
+      setLoading(false)
+      setEnrolledCourses([])
     }
-  }, [user])
+    // If isLoaded is false, wait (loading state remains true)
+  }, [isLoaded, user]) // ADD isLoaded to dependencies
 
   const fetchEnrolledCourses = async () => {
     try {
       setLoading(true)
-      // Call your API to get enrolled courses
-      const response = await axios.get('/api/enroll-course') // Adjust endpoint as needed
+      const response = await axios.get('/api/enroll-course')
       setEnrolledCourses(response.data || [])
     } catch (error) {
       console.error('Error fetching enrolled courses:', error)

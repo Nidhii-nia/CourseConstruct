@@ -31,7 +31,6 @@ export const coursesTable = pgTable("courses", {
 }, (table) => ({
   cidIndex: index("courses_cid_idx").on(table.cid),
   userEmailIndex: index("courses_useremail_idx").on(table.useremail),
-  // 🚀 ADD THIS: Composite index for faster joins
   cidUserEmailCompositeIndex: index("courses_cid_useremail_idx").on(table.cid, table.useremail),
 }));
 
@@ -48,9 +47,7 @@ export const enrollCourseTable = pgTable('enrollCourse', {
 }, (table) => ({
   enrollCidIndex: index("enroll_cid_idx").on(table.cid),
   enrollUserEmailIndex: index("enroll_useremail_idx").on(table.useremail),
-  // 🚀 ADD THESE: Critical composite indexes for your queries
   enrollUserCidCompositeIndex: index("enroll_user_cid_idx").on(table.useremail, table.cid),
-  enrollIdDescIndex: index("enroll_id_desc_idx").on(table.id.desc()), // For ORDER BY id DESC
-  // Optional but helpful for sorting
+  enrollIdDescIndex: index("enroll_id_desc_idx").on(table.id.desc()), 
   enrollCidUserEmailCompositeIndex: index("enroll_cid_useremail_idx").on(table.cid, table.useremail),
 }));

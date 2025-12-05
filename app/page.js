@@ -7,13 +7,13 @@ export default function Home() {
   return (
     <PageWrapper>
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-emerald-950 via-gray-900 to-emerald-900 text-white min-h-screen flex items-center">
+      <section className="relative overflow-hidden bg-linear-to-br from-emerald-950 via-gray-900 to-emerald-900 text-white min-h-screen flex items-center">
         {/* Animated Background Particles */}
         <div className="absolute inset-0 overflow-hidden">
           {[...Array(20)].map((_, i) => (
             <div
               key={i}
-              className="absolute w-[2px] h-[2px] bg-emerald-400 rounded-full animate-pulse"
+              className="absolute w-0.5 h-0.5 bg-emerald-400 rounded-full animate-pulse"
               style={{
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
@@ -35,8 +35,8 @@ export default function Home() {
               </div>
               
               {/* Main Heading */}
-              <h1 className="text-5xl md:text-7xl font-bold mb-8 leading-tight">
-                <span className="block bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 to-emerald-100">
+              <h1 className="text-5xl md:text-5xl font-bold mb-8 leading-tight">
+                <span className="block bg-clip-text text-transparent bg-linear-to-r from-emerald-300 to-emerald-100">
                   CourseConstruct
                 </span>
               </h1>
@@ -62,7 +62,7 @@ export default function Home() {
                 <Link href="/workspace">
                   <Button 
                     size="lg" 
-                    className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-semibold shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-300 group px-8 py-6 w-full sm:w-auto"
+                    className="bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-semibold shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-300 group px-8 py-6 w-full sm:w-auto"
                   >
                     <Brain className="mr-3 h-5 w-5" />
                     See AI in Action
@@ -93,7 +93,7 @@ export default function Home() {
             {/* Right - AI Visualizer */}
             <div className="relative">
               {/* Main AI Visualization Card */}
-              <div className="relative h-[550px] rounded-3xl overflow-hidden bg-gradient-to-br from-emerald-900/30 via-gray-900/50 to-emerald-800/30 border border-emerald-500/20 backdrop-blur-sm shadow-2xl shadow-emerald-900/30">
+              <div className="relative h-[550px] rounded-3xl overflow-hidden bg-linear-to-br from-emerald-900/30 via-gray-900/50 to-emerald-800/30 border border-emerald-500/20 backdrop-blur-sm shadow-2xl shadow-emerald-900/30">
                 {/* Animated Neural Network Lines */}
                 <div className="absolute inset-0 opacity-40">
                   <svg className="w-full h-full" viewBox="0 0 400 550">
@@ -146,23 +146,23 @@ export default function Home() {
                   <Brain className="h-8 w-8 text-emerald-300" />
                 </div>
                 
-                <div className="absolute bottom-6 right-6 w-20 h-20 bg-emerald-600/20 backdrop-blur-sm rounded-3xl border border-emerald-400/30 flex items-center justify-center animate-float" style={{animationDelay: '1s'}}>
+                <div className="absolute bottom-6 right-6 w-15 h-15 bg-emerald-600/20 backdrop-blur-sm rounded-3xl border border-emerald-400/30 flex items-center justify-center animate-float" style={{animationDelay: '1s'}}>
                   <Wand2 className="h-10 w-10 text-emerald-200" />
                 </div>
 
                 {/* Central Content */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-8">
                   {/* AI Icon */}
-                  <div className="w-32 h-32 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-8 animate-pulse shadow-xl shadow-emerald-500/40">
+                  <div className="w-32 h-32 bg-linear-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-8 animate-pulse shadow-xl shadow-emerald-500/40">
                     <Cpu className="h-16 w-16 text-white" />
                   </div>
                   
                   {/* Title */}
                   <div className="text-center mb-6">
-                    <h3 className="text-3xl font-bold text-emerald-100 mb-3 bg-gradient-to-r from-emerald-300 to-emerald-100 bg-clip-text text-transparent">
+                    <h3 className="text-3xl font-bold text-emerald-100 mb-3 bg-linear-to-r from-emerald-300 to-emerald-100 bg-clip-text">
                       AI Course Generator
                     </h3>
-                    <div className="h-1 w-24 bg-gradient-to-r from-emerald-500 to-emerald-400 mx-auto rounded-full"></div>
+                    <div className="h-1 w-24 bg-linear-to-r from-emerald-500 to-emerald-400 mx-auto rounded-full"></div>
                   </div>
                   
                   {/* Status text */}
@@ -174,7 +174,7 @@ export default function Home() {
                     {/* Progress indicator */}
                     <div className="mt-4">
                       <div className="h-2 bg-emerald-800/50 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full animate-progress w-3/4"></div>
+                        <div className="h-full bg-linear-to-r from-emerald-400 to-emerald-500 rounded-full animate-progress w-3/4"></div>
                       </div>
                       <div className="flex justify-between text-sm text-emerald-300/70 mt-2">
                         <span>Processing</span>
@@ -190,7 +190,7 @@ export default function Home() {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-24 bg-gradient-to-b from-gray-950 to-emerald-950/30">
+      <section className="py-24 bg-linear-to-b from-gray-950 to-emerald-950/30">
         <div className="container mx-auto px-6">
           <div className="text-center mb-20">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
@@ -203,7 +203,7 @@ export default function Home() {
 
           <div className="grid md:grid-cols-3 gap-8 relative">
             {/* Connecting Line */}
-            <div className="hidden md:block absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-500/20 via-emerald-500/50 to-emerald-500/20 transform -translate-y-1/2"></div>
+            <div className="hidden md:block absolute top-1/2 left-0 right-0 h-0.5 bg-linear-to-r from-emerald-500/20 via-emerald-500/50 to-emerald-500/20 transform -translate-y-1/2"></div>
 
             {[
               {
@@ -227,10 +227,10 @@ export default function Home() {
             ].map((item, idx) => (
               <div 
                 key={idx}
-                className="relative bg-gradient-to-br from-gray-900/50 to-emerald-900/20 p-8 rounded-3xl border border-emerald-800/30 backdrop-blur-sm group hover:border-emerald-500/50 transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-emerald-900/20"
+                className="relative bg-linear-to-br from-gray-900/50 to-emerald-900/20 p-8 rounded-3xl border border-emerald-800/30 backdrop-blur-sm group hover:border-emerald-500/50 transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-emerald-900/20"
               >
                 {/* Step Number */}
-                <div className="absolute -top-4 left-8 w-12 h-12 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-emerald-500/30">
+                <div className="absolute -top-4 left-8 w-12 h-12 bg-linear-to-r from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-emerald-500/30">
                   {item.step}
                 </div>
                 
@@ -300,7 +300,7 @@ export default function Home() {
             ].map((feature, idx) => (
               <div 
                 key={idx}
-                className="bg-gradient-to-br from-gray-900 to-emerald-900/20 p-8 rounded-2xl border border-emerald-800/30 hover:border-emerald-500/50 transition-all duration-300 group hover:translate-y-[-8px]"
+                className="bg-linear-to-br from-gray-900 to-emerald-900/20 p-8 rounded-2xl border border-emerald-800/30 hover:border-emerald-500/50 transition-all duration-300 group hover:-translate-y-2"
               >
                 <div className="w-14 h-14 bg-emerald-900/40 rounded-xl flex items-center justify-center mb-6 group-hover:bg-emerald-800/60 transition-colors duration-300">
                   <div className="text-emerald-300 group-hover:scale-110 transition-transform duration-300">
@@ -320,7 +320,7 @@ export default function Home() {
       </section>
 
       {/* CTA Section - With Generate AI Course Button */}
-      <section className="relative overflow-hidden py-24 bg-gradient-to-r from-emerald-900 via-emerald-800 to-emerald-900">
+      <section className="relative overflow-hidden py-24 bg-linear-to-r from-emerald-900 via-emerald-800 to-emerald-900">
         {/* Animated Background */}
         <div className="absolute inset-0">
           <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-emerald-500/10 rounded-full animate-ping" style={{animationDuration: '3s'}}></div>
@@ -346,7 +346,7 @@ export default function Home() {
           <Link href="/workspace">
             <Button 
               size="lg" 
-              className="bg-gradient-to-r from-emerald-400 to-emerald-500 hover:from-emerald-500 hover:to-emerald-600 text-white font-bold px-12 py-7 text-lg shadow-2xl shadow-emerald-500/30 hover:shadow-emerald-500/50 transition-all duration-300 group"
+              className="bg-linear-to-r from-emerald-400 to-emerald-500 hover:from-emerald-500 hover:to-emerald-600 text-white font-bold px-12 py-7 text-lg shadow-2xl shadow-emerald-500/30 hover:shadow-emerald-500/50 transition-all duration-300 group"
             >
               <Brain className="mr-3 h-6 w-6" />
               Generate AI Course

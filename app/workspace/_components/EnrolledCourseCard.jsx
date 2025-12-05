@@ -52,7 +52,7 @@ function EnrolledCourseCard({ course, enrolledCourse }) {
 
           <Progress value={progress} className="h-2 bg-emerald-900" />
 
-          <Link href={`/workspace/view-course/${course?.cid}`}>
+          <Link href={`/course/${course?.cid}`}>
             <Button className="w-full mt-2 bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-1 rounded-md text-sm flex items-center gap-2 shadow">
               <PlaySquareIcon className="mr-2 h-4 w-4" />
               Resume Learning

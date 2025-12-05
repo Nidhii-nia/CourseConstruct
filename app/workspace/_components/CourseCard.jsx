@@ -14,27 +14,32 @@ function CourseCard({ course }) {
   const courseJson = course?.courseJson?.course;
   const [loading, setLoading] = useState(false);
   const { triggerRefresh } = useEnrollContext();
+  const { isSignedIn } = useUser();
 
   const onEnrollCourse = async () => {
+    if (!isSignedIn) {
+      toast.error("Please sign in to enroll in courses");
+      return;
+    }
+
     try {
       setLoading(true);
       startLoading();
-      
-      const result = await axios.post('/api/enroll-course', {
-        courseId: course?.cid
+
+      const result = await axios.post("/api/enroll-course", {
+        courseId: course?.cid,
       });
-      
+
       if (result.status === 409) {
         toast.warning("Already enrolled!");
       } else {
-        toast.success('🎉 Successfully Enrolled!');
-        
+        toast.success("🎉 Successfully Enrolled!");
+
         // SIMPLE: Just refresh once
         triggerRefresh();
       }
-      
     } catch (e) {
-      toast.error('Failed to enroll');
+      toast.error("Failed to enroll");
     } finally {
       setLoading(false);
       stopLoading();
@@ -70,7 +75,7 @@ function CourseCard({ course }) {
             >
               {loading ? (
                 <>
-                  <LoaderCircle className="animate-spin" size={16} /> 
+                  <LoaderCircle className="animate-spin" size={16} />
                   <span>Enrolling...</span>
                 </>
               ) : (

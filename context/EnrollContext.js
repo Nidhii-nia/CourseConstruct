@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import axios from "axios";
+import { useUser } from '@clerk/nextjs'; // ADD THIS IMPORT
 
 export const EnrollContext = createContext();
 
@@ -8,9 +9,15 @@ export const EnrollProvider = ({ children }) => {
   const [enrolledCourseList, setEnrolledCourseList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const hasFetched = useRef(false);
+  const { isLoaded, isSignedIn } = useUser(); // ADD THIS LINE
 
   const fetchEnrolledCourses = useCallback(async () => {
-    // Prevent multiple simultaneous calls
+    // ADD AUTH CHECK HERE
+    if (!isLoaded || !isSignedIn) {
+      console.log("Auth not loaded or user not signed in, skipping fetch");
+      return;
+    }
+    
     if (isLoading) {
       console.log("Already loading, skipping");
       return;
@@ -29,19 +36,19 @@ export const EnrollProvider = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  }, []); // Empty dependencies - stable function
+  }, [isLoading, isLoaded, isSignedIn]); // ADD DEPENDENCIES
 
   const triggerRefresh = useCallback(() => {
     console.log("Manual refresh triggered");
     fetchEnrolledCourses();
   }, [fetchEnrolledCourses]);
 
-  // Fetch ONCE on mount
+  // MODIFY THIS EFFECT TO CHECK AUTH
   useEffect(() => {
-    if (!hasFetched.current) {
+    if (!hasFetched.current && isLoaded && isSignedIn) {
       fetchEnrolledCourses();
     }
-  }, []); // Empty array - runs once
+  }, [isLoaded, isSignedIn, fetchEnrolledCourses]);
 
   return (
     <EnrollContext.Provider value={{ 
