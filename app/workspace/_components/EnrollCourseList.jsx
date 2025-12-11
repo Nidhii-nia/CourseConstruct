@@ -14,7 +14,7 @@ function EnrollCourseList() {
         <h2 className='font-bold text-xl text-emerald-950 mb-3'>Continue Learning</h2>
         <div className="flex items-center justify-center py-10">
           <Loader2 className="h-6 w-6 animate-spin text-emerald-600" />
-          <p>Fetching Enrolled Courses</p>
+          <p className="text-emerald-700 font-medium">Fetching Enrolled Courses</p>
         </div>
       </div>
     );

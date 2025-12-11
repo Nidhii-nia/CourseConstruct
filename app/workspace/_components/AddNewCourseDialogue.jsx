@@ -43,7 +43,7 @@ function AddNewCourseDialogue({ children }) {
 
   const router = useRouter();
 
-  // Set mounted state to prevent state updates after unmount
+  // Only render on client-side to avoid hydration mismatch
   useEffect(() => {
     setMounted(true);
     return () => setMounted(false);
@@ -101,7 +101,7 @@ function AddNewCourseDialogue({ children }) {
       const clientRequestId = uuid4();
 
       const result = await axios.post(
-        "/api/generate-course-layout", // Use relative path
+        "/api/generate-course-layout",
         {
           ...formData,
           clientRequestId,
@@ -132,11 +132,28 @@ function AddNewCourseDialogue({ children }) {
     } catch (error) {
       console.error("❌ Error generating course:", error);
       
+      // Add 401 error handling here
+      if (error.response?.status === 401) {
+        toast.error("Please sign in to create a course");
+        // Redirect to sign-in page
+        window.location.href = "/sign-in";
+        return; // Stop further execution
+      }
+      
+      // Handle 403 error (free user limit)
+      if (error.response?.status === 403) {
+        if (error.response?.data?.code === "LIMIT_EXCEEDED") {
+          toast.warning("Free users can only create one course. Upgrade to premium!");
+          router.push('/workspace/billing');
+          return;
+        }
+      }
+      
       // Don't update state if component is unmounted
       if (!mounted) return;
       
       toast.error(
-        error.message ||
+        error.response?.data?.error || error.message ||
           "Failed to generate course. Please check your internet connection."
       );
     } finally {
@@ -153,6 +170,16 @@ function AddNewCourseDialogue({ children }) {
       resetForm();
     }
   };
+
+  // Prevent server-side rendering of the Dialog to avoid hydration mismatch
+  if (!mounted) {
+    // Return a placeholder with same dimensions to avoid layout shift
+    return (
+      <div className="inline-block">
+        {children}
+      </div>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>

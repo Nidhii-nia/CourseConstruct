@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
-import { ai } from "../generate-course-layout/route";
 import axios from "axios";
 import { db } from "@/config/db";
 import { coursesTable } from "@/config/schema";
 import { eq } from "drizzle-orm";
+import { Groq } from "groq-sdk";
+
+// Initialize Groq client
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 const PROMPT = `
 Generate detailed HTML content for each topic for students or scholars so they could read and understand topics deeply keep it professional like textbooks with examples where required like questions and there answers for understanding.
@@ -58,13 +61,24 @@ export async function POST(req) {
     // Generate content for each chapter
     const chapterPromises = courseJson.chapters.map(async (chapter) => {
       try {
-        // Get AI content
-        const response = await ai.models.generateContent({
-          model: "gemini-2.0-flash",
-          contents: [{ role: "user", parts: [{ text: PROMPT + JSON.stringify(chapter) }] }]
+        // Get AI content using Groq with the exact parameters from your example
+        const chatCompletion = await groq.chat.completions.create({
+          messages: [
+            {
+              role: "user",
+              content: PROMPT + JSON.stringify(chapter)
+            }
+          ],
+          model: "openai/gpt-oss-120b",
+          temperature: 1,
+          max_completion_tokens: 8192,
+          top_p: 1,
+          stream: false,
+          reasoning_effort: "medium",
+          stop: null
         });
 
-        const rawText = response.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        const rawText = chatCompletion.choices[0]?.message?.content || "";
         const jsonText = rawText.replace(/```json|```/g, "").trim();
         
         // Simple JSON parse with fallback
@@ -76,14 +90,13 @@ export async function POST(req) {
           courseData = {
             chapterName: chapter.chapterName || "Chapter",
             topics: [{
-              topic: "Main Topic",
-              content: `<div><h2>${chapter.chapterName}</h2><p>Content for this chapter.</p></div>`
+              topic: "No Content for this Chapter",
             }]
           };
         }
 
         // Get YouTube videos
-        const youtubeVideo = await GetYoutubeVideo(chapter?.chapterName, courseJson?.course?.name);
+        const youtubeVideo = await GetYoutubeVideo(chapter?.chapterName, courseJson?.course?.name , 4);
 
         return {
           youtubeVideo,
@@ -110,7 +123,7 @@ export async function POST(req) {
     await db.update(coursesTable)
       .set({
         courseContent: output,
-        hasContent:true,
+        hasContent: true,
         clientRequestIdContent: clientRequestId
       })
       .where(eq(coursesTable.cid, courseId));
@@ -130,15 +143,15 @@ export async function POST(req) {
 }
 
 // YouTube API
-async function GetYoutubeVideo(topic, courseName) {
+async function GetYoutubeVideo(topic, courseName, maxPerChapter) {
   if (!process.env.YOUTUBE_API_KEY) return [];
 
   try {
     const response = await axios.get("https://www.googleapis.com/youtube/v3/search", {
       params: {
         part: "snippet",
-        q: `${topic} ${courseName} full course`,
-        maxResults: 4,
+        q: `${topic} ${courseName} full course for exams`,
+        maxResults: maxPerChapter || 4,
         type: "video",
         key: process.env.YOUTUBE_API_KEY,
       }

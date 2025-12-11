@@ -9,6 +9,7 @@ import React, { useState } from "react";
 import { toast } from "sonner";
 import { startLoading, stopLoading } from "@/app/components/RouteLoader";
 import { useEnrollContext } from "@/context/EnrollContext";
+import { useUser } from "@clerk/nextjs";
 
 function CourseCard({ course }) {
   const courseJson = course?.courseJson?.course;
@@ -39,7 +40,11 @@ function CourseCard({ course }) {
         triggerRefresh();
       }
     } catch (e) {
-      toast.error("Failed to enroll");
+      if (e.response?.status === 409) {
+        toast.warning("Already enrolled!");
+      } else {
+        toast.error("Failed to enroll");
+      }
     } finally {
       setLoading(false);
       stopLoading();

@@ -1,26 +1,22 @@
 import { db } from "@/config/db";
 import { coursesTable } from "@/config/schema";
 import { auth, currentUser } from "@clerk/nextjs/server";
-import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 import { v4 as uuid4 } from "uuid";
 import { InferenceClient } from "@huggingface/inference";
 import { eq } from "drizzle-orm";
+import { Groq } from "groq-sdk";
 
 // --------------------------------------------------
 // AI Prompt
 // --------------------------------------------------
-const PROMPT = `Generate Learning Course based on the following details and ensure to keep everything like in professional or popular textbooks also keep in mind to give the chapter names a little descriptive so that while fetching videos we get relevent videos. 
-Make sure to add:
-- Course Name
-- Description
-- Category
-- Level
-- Include Video (boolean)
-- Number of Chapters
-- Banner Image Prompt (3D flat-style UI/UX design, vibrant colors)
-- Chapters: chapterName, duration, topics[]
-Return ONLY JSON in this schema:
+const PROMPT = `Create course JSON with:
+- name, description, category, level
+- includeVideo (boolean), noOfChapters (number)
+- bannerImagePrompt (3D flat UI/UX, vibrant colors)
+- chapters[{chapterName, duration, topics[]}]
+Make chapter names descriptive for video relevance.
+Return ONLY this JSON:
 {
   "course": {
     "name": "string",
@@ -39,10 +35,10 @@ Return ONLY JSON in this schema:
     ]
   }
 }
-User Input:
-`;
+Input: `;
 
-export const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Initialize Groq client
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // Helper
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -85,7 +81,6 @@ export async function POST(req) {
       .from(coursesTable)
       .where(eq(coursesTable.clientRequestIdContent, clientRequestId));
 
-
     if (existing.length > 0) {
       return NextResponse.json({
         success: true,
@@ -112,17 +107,12 @@ export async function POST(req) {
     }
 
     // --------------------------------------------------
-    // 2. Generate Course using Gemini
+    // 2. Generate Course using Groq
     // --------------------------------------------------
-    const model = "gemini-2.0-flash";
-    const contents = [
-      { role: "user", parts: [{ text: PROMPT + JSON.stringify(formData) }] },
-    ];
-
     let retries = 3;
     let rawText = "";
 
-    //If user already created any course?
+    // If user already created any course?
     if(!hasPremiumAccess){
       const result = await db.select().from(coursesTable)
       .where(eq(coursesTable.useremail,user?.primaryEmailAddress?.emailAddress));
@@ -134,24 +124,36 @@ export async function POST(req) {
 
     while (retries > 0) {
       try {
-        const response = await ai.models.generateContent({ model, contents });
-        rawText = response?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        const chatCompletion = await groq.chat.completions.create({
+          messages: [
+            {
+              role: "user",
+              content: PROMPT + JSON.stringify(formData)
+            }
+          ],
+          model: "openai/gpt-oss-120b", // Using the exact model from your example
+          temperature: 1,
+          max_completion_tokens: 8192,
+          top_p: 1,
+          stream: false, // Changed to false for easier handling
+          reasoning_effort: "medium",
+          stop: null
+        });
+
+        rawText = chatCompletion.choices[0]?.message?.content || "";
         break;
       } catch (err) {
-        const isRateLimit =
-          err?.status === 429 || err?.response?.status === 429;
-
+        const isRateLimit = err?.status === 429;
+        
         if (isRateLimit) {
-          const retryAfter = parseInt(
-            err?.response?.data?.retryDelay?.seconds || 30,
-            10
-          );
+          const retryAfter = 30;
           console.log(
             `Rate limit hit. Retrying in ${retryAfter}s... attempt left: ${retries - 1}`
           );
           await wait(retryAfter * 1000);
           retries--;
         } else {
+          console.error("Groq API error:", err);
           throw err;
         }
       }
