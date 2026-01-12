@@ -6,7 +6,8 @@
     "dev": "next dev --turbo",
     "dev-webpack": "next dev --webpack",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "type": "module"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.34.1",
