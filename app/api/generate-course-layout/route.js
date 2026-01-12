@@ -10,13 +10,20 @@ import { Groq } from "groq-sdk";
 // --------------------------------------------------
 // AI Prompt
 // --------------------------------------------------
-const PROMPT = `Create course JSON with:
-- name, description, category, level
-- includeVideo (boolean), noOfChapters (number)
-- bannerImagePrompt (3D flat UI/UX, vibrant colors)
-- chapters[{chapterName, duration, topics[]}]
-Make chapter names descriptive for video relevance.
-Return ONLY this JSON:
+const PROMPT = `Genrate Learning Course depends on following details. 
+In which Make sure to add Course Name, Description,Course Banner Image Prompt 
+(Create a modern, flat-style 2D digital illustration representing user Topic.
+ Include UI/UX elements such as mockup screens, text blocks, icons, buttons,
+  and creative workspace tools. Add symbolic elements related to user Course, 
+  like sticky notes, design components, and visual aids. Use a vibrant color 
+  palette (blues, purples, oranges) with a clean, professional look.
+   The illustration should feel creative, tech-savvy, and educational,
+    ideal for visualizing concepts in user Course) for Course Banner in
+     3d format Chapter Name, , Topic under each chapters , Duration for each chapters etc,
+      in JSON format only
+
+Schema:
+
 {
   "course": {
     "name": "string",
@@ -25,17 +32,22 @@ Return ONLY this JSON:
     "level": "string",
     "includeVideo": "boolean",
     "noOfChapters": "number",
-    "bannerImagePrompt": "string",
+
+"bannerImagePrompt": "string",
     "chapters": [
       {
         "chapterName": "string",
         "duration": "string",
-        "topics": ["string"]
+        "topics": [
+          "string"
+        ],
+     
       }
     ]
   }
 }
-Input: `;
+
+, User Input:  `;
 
 // Initialize Groq client
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
@@ -64,7 +76,7 @@ export async function POST(req) {
     const user = await currentUser();
 
     const { has } = await auth();
-    const hasPremiumAccess = has({plan: 'premium'})
+    const hasPremiumAccess = has({ plan: "premium" });
 
     if (!user) {
       return NextResponse.json(
@@ -113,12 +125,16 @@ export async function POST(req) {
     let rawText = "";
 
     // If user already created any course?
-    if(!hasPremiumAccess){
-      const result = await db.select().from(coursesTable)
-      .where(eq(coursesTable.useremail,user?.primaryEmailAddress?.emailAddress));
+    if (!hasPremiumAccess) {
+      const result = await db
+        .select()
+        .from(coursesTable)
+        .where(
+          eq(coursesTable.useremail, user?.primaryEmailAddress?.emailAddress)
+        );
 
-      if(result?.length>=1){
-        return NextResponse.json({'resp': 'limit exceeded'})
+      if (result?.length >= 1) {
+        return NextResponse.json({ resp: "limit exceeded" });
       }
     }
 
@@ -128,8 +144,8 @@ export async function POST(req) {
           messages: [
             {
               role: "user",
-              content: PROMPT + JSON.stringify(formData)
-            }
+              content: PROMPT + JSON.stringify(formData),
+            },
           ],
           model: "openai/gpt-oss-120b", // Using the exact model from your example
           temperature: 1,
@@ -137,18 +153,20 @@ export async function POST(req) {
           top_p: 1,
           stream: false, // Changed to false for easier handling
           reasoning_effort: "medium",
-          stop: null
+          stop: null,
         });
 
         rawText = chatCompletion.choices[0]?.message?.content || "";
         break;
       } catch (err) {
         const isRateLimit = err?.status === 429;
-        
+
         if (isRateLimit) {
           const retryAfter = 30;
           console.log(
-            `Rate limit hit. Retrying in ${retryAfter}s... attempt left: ${retries - 1}`
+            `Rate limit hit. Retrying in ${retryAfter}s... attempt left: ${
+              retries - 1
+            }`
           );
           await wait(retryAfter * 1000);
           retries--;

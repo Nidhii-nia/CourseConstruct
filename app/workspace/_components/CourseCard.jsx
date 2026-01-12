@@ -7,7 +7,6 @@ import Image from "next/image";
 import Link from "next/link";
 import React, { useState } from "react";
 import { toast } from "sonner";
-import { startLoading, stopLoading } from "@/app/components/RouteLoader";
 import { useEnrollContext } from "@/context/EnrollContext";
 import { useUser } from "@clerk/nextjs";
 
@@ -25,7 +24,6 @@ function CourseCard({ course }) {
 
     try {
       setLoading(true);
-      startLoading();
 
       const result = await axios.post("/api/enroll-course", {
         courseId: course?.cid,
@@ -47,7 +45,6 @@ function CourseCard({ course }) {
       }
     } finally {
       setLoading(false);
-      stopLoading();
     }
   };
 

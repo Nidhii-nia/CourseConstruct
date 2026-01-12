@@ -16,23 +16,46 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { toast } from "sonner";
-import { startLoading, stopLoading } from "@/app/components/RouteLoader";
+import { startLoading, stopLoading } from "@/app/components/RouteLoaderInner";
 
 // === Duration Parser ===
 function parseDurationToMinutes(duration) {
   if (!duration) return 0;
+
+  // If already a number (minutes)
+  if (typeof duration === "number") return duration;
+
   const str = String(duration).toLowerCase().trim();
 
-  if (/^\d+$/.test(str)) return parseInt(str, 10);
-  if (str.includes("min")) return parseInt(str.match(/\d+/)?.[0] || 0);
-  if (str.includes("hour") || str.includes("hr"))
-    return Math.round(parseFloat(str.match(/\d+(\.\d+)?/)?.[0] || 0) * 60);
-  if (str.includes(":")) {
-    const [hours, minutes] = str.split(":").map(Number);
-    return (hours || 0) * 60 + (minutes || 0);
+  let total = 0;
+
+  // hours (hr, hrs, hour, hours, h)
+  const hourMatch = str.match(/(\d+(\.\d+)?)\s*(h|hr|hrs|hour|hours)/);
+  if (hourMatch) {
+    total += Math.round(parseFloat(hourMatch[1]) * 60);
   }
-  return 0;
+
+  // minutes (min, mins, minute, minutes, m)
+  const minMatch = str.match(/(\d+)\s*(m|min|mins|minute|minutes)/);
+  if (minMatch) {
+    total += parseInt(minMatch[1], 10);
+  }
+
+  // HH:MM format
+  if (str.includes(":")) {
+    const [h, m] = str.split(":").map(Number);
+    if (!isNaN(h)) total += h * 60;
+    if (!isNaN(m)) total += m;
+  }
+
+  // plain number string fallback
+  if (total === 0 && /^\d+$/.test(str)) {
+    total = parseInt(str, 10);
+  }
+
+  return total;
 }
+
 
 // === Friendly Duration Formatter ===
 function formatDurationFriendly(minutes) {

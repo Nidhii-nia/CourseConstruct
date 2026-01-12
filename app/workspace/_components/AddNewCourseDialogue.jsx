@@ -25,7 +25,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { startLoading, stopLoading } from "@/app/components/RouteLoader";
+import { startLoading, stopLoading } from "@/app/components/RouteLoaderInner";
 
 function AddNewCourseDialogue({ children }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -127,7 +127,7 @@ function AddNewCourseDialogue({ children }) {
 
         router.push(`/workspace/edit-course/${result.data.cid}`);
       } else {
-        toast.error(result?.data?.error || "⚠️ Failed to generate course.");
+        toast.error(result?.data?.error || "⚠️ Failed to generate course please try later.");
       }
     } catch (error) {
       console.error("❌ Error generating course:", error);

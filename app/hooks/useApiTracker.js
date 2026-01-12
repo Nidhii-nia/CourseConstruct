@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { startLoading, stopLoading, RouteLoading } from '@/app/components/RouteLoader';
+import { startLoading, stopLoading } from '@/app/components/RouteLoaderInner';
 
 export function useApiTracker() {
   useEffect(() => {

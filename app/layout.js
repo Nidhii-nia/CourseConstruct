@@ -4,7 +4,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import Provider from "./provider";
 import { Toaster } from "sonner"; 
 
-import { EnrollProvider } from "@/context/EnrollContext";   // ✅ Add this
+import { EnrollProvider } from "@/context/EnrollContext";
 import RouteLoader from "@/app/components/RouteLoader";
 
 const geistSans = Geist({
