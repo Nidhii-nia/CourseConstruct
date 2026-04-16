@@ -31,9 +31,9 @@ const SideBarOptions = [
     path: "/workspace",
   },
   {
-    title: "My Library",
+    title: "Enrolled Courses",
     icon: AlbumIcon,
-    path: "/workspace/my-library",
+    path: "/workspace/enrolled-courses",
   },
   {
     title: "Explore Courses",
@@ -63,7 +63,7 @@ function AppSidebar() {
           alt="logo"
           width={250}
           height={300}
-          className="w-full h-auto max-w-[200px] sm:max-w-[250px]"
+          className="w-full h-auto max-w-50 sm:max-w-250"
         />
       </SidebarHeader>
       <SidebarContent>

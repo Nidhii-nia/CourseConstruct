@@ -1,9 +1,20 @@
 "use client";
 
-import { Gift, ChevronDown, ChevronUp, Loader2, Edit2, Trash2, Save, X, Plus } from "lucide-react";
+import {
+  Gift,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  Edit2,
+  Trash2,
+  Save,
+  X,
+  Plus,
+} from "lucide-react";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 // === Friendly Duration Formatter (generalized) ===
 function formatDurationFriendly(raw) {
@@ -16,7 +27,9 @@ function formatDurationFriendly(raw) {
     if (min < 60) return `${min} min`;
     const hrs = Math.floor(min / 60);
     const rem = min % 60;
-    return rem ? `${hrs} hr${hrs > 1 ? "s" : ""} ${rem} min` : `${hrs} hr${hrs > 1 ? "s" : ""}`;
+    return rem
+      ? `${hrs} hr${hrs > 1 ? "s" : ""} ${rem} min`
+      : `${hrs} hr${hrs > 1 ? "s" : ""}`;
   }
   // 'minute(s)', 'min(s)'
   if (/(\d+)\s*(minute|min|minutes|mins)/.test(str)) {
@@ -25,7 +38,9 @@ function formatDurationFriendly(raw) {
     if (min < 60) return `${min} min`;
     const hrs = Math.floor(min / 60);
     const rem = min % 60;
-    return rem ? `${hrs} hr${hrs > 1 ? "s" : ""} ${rem} min` : `${hrs} hr${hrs > 1 ? "s" : ""}`;
+    return rem
+      ? `${hrs} hr${hrs > 1 ? "s" : ""} ${rem} min`
+      : `${hrs} hr${hrs > 1 ? "s" : ""}`;
   }
   // 'hour(s)', 'hr(s)'
   if (/(\d+)\s*(hour|hr|hours|hrs)/.test(str)) {
@@ -47,6 +62,7 @@ function formatDurationFriendly(raw) {
 }
 
 function ChapterTopicList({ course }) {
+  const queryClient = useQueryClient();
   const courseLayout = course?.courseJson?.course;
   const [openChapter, setOpenChapter] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -57,6 +73,24 @@ function ChapterTopicList({ course }) {
   const [isSaving, setIsSaving] = useState(false);
   const [pendingUpdates, setPendingUpdates] = useState([]);
   const [localTopics, setLocalTopics] = useState({});
+  const [editingChapter, setEditingChapter] = useState(null);
+  const [editedChapterName, setEditedChapterName] = useState("");
+  const [addingChapter, setAddingChapter] = useState(false);
+  const [newChapterName, setNewChapterName] = useState("");
+  const [localChapters, setLocalChapters] = useState([]);
+
+  useEffect(() => {
+    if (courseLayout?.chapters) {
+      setLocalChapters([...courseLayout.chapters]);
+
+      const topicsMap = {};
+      courseLayout.chapters.forEach((chapter, index) => {
+        topicsMap[index] = chapter.topics ? [...chapter.topics] : [];
+      });
+
+      setLocalTopics(topicsMap);
+    }
+  }, [courseLayout]);
 
   // Initialize local topics from course data
   useEffect(() => {
@@ -92,6 +126,65 @@ function ChapterTopicList({ course }) {
     setEditedText(currentText);
   };
 
+  const startEditingChapter = (index, name) => {
+    setEditingChapter(index);
+    setEditedChapterName(name);
+  };
+
+  const saveChapterEdit = (index) => {
+    if (!editedChapterName.trim()) {
+      toast.error("Chapter name cannot be empty");
+      return;
+    }
+
+    setLocalChapters((prev) =>
+      prev.map((ch, i) =>
+        i === index ? { ...ch, chapterName: editedChapterName } : ch,
+      ),
+    );
+
+    setPendingUpdates((prev) => [
+      ...prev,
+      {
+        chapterIndex: index,
+        newChapterName: editedChapterName,
+        action: "update-chapter",
+      },
+    ]);
+
+    setEditingChapter(null);
+    toast.success("Chapter updated locally");
+  };
+
+  const addNewChapter = () => {
+    if (!newChapterName.trim()) {
+      toast.error("Chapter name cannot be empty");
+      return;
+    }
+
+    const newChapter = {
+      chapterName: newChapterName,
+      duration: "0",
+      topics: [],
+    };
+
+    setLocalChapters((prev) => [...prev, newChapter]);
+
+    setPendingUpdates((prev) => [
+      ...prev,
+      {
+        chapterIndex: localChapters.length,
+        newChapterName,
+        action: "add-chapter",
+      },
+    ]);
+
+    setAddingChapter(false);
+    setNewChapterName("");
+
+    toast.success("Chapter added locally");
+  };
+
   const startAdding = (chapterIndex) => {
     setAddingTopic(chapterIndex);
     setNewTopicText("");
@@ -122,18 +215,18 @@ function ChapterTopicList({ course }) {
       chapterIndex,
       topicIndex,
       newTopicName: editedText.trim(),
-      action: 'update'
+      action: "update",
     };
-    
-    setPendingUpdates(prev => [...prev, update]);
-    
-    setLocalTopics(prev => ({
+
+    setPendingUpdates((prev) => [...prev, update]);
+
+    setLocalTopics((prev) => ({
       ...prev,
-      [chapterIndex]: prev[chapterIndex].map((topic, idx) => 
-        idx === topicIndex ? editedText.trim() : topic
-      )
+      [chapterIndex]: prev[chapterIndex].map((topic, idx) =>
+        idx === topicIndex ? editedText.trim() : topic,
+      ),
     }));
-    
+
     toast.success("Edit saved locally. Click 'Finish' to update database.");
     cancelEditing();
   };
@@ -149,99 +242,136 @@ function ChapterTopicList({ course }) {
       chapterIndex,
       topicIndex: newTopicIndex,
       newTopicName: newTopicText.trim(),
-      action: 'add' // New action type
+      action: "add", // New action type
     };
-    
-    setPendingUpdates(prev => [...prev, update]);
-    
-    setLocalTopics(prev => ({
+
+    setPendingUpdates((prev) => [...prev, update]);
+
+    setLocalTopics((prev) => ({
       ...prev,
-      [chapterIndex]: [...(prev[chapterIndex] || []), newTopicText.trim()]
+      [chapterIndex]: [...(prev[chapterIndex] || []), newTopicText.trim()],
     }));
-    
-    toast.success("New topic added locally. Click 'Finish' to update database.");
+
+    toast.success(
+      "New topic added locally. Click 'Finish' to update database.",
+    );
     cancelAdding();
   };
 
-  const deleteTopic = async (chapterIndex, topicIndex, topicText) => {
-    // Replace confirm with toast dialog
+  const deleteTopic = (chapterIndex, topicIndex, topicText) => {
     toast.custom((t) => (
-      <div className={`${
-        t.visible ? 'animate-enter' : 'animate-leave'
-      } max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
-        <div className="flex-1 w-0 p-4">
-          <div className="flex items-start">
-            <div className="shrink-0 pt-0.5">
-              <Trash2 className="h-6 w-6 text-rose-600" />
-            </div>
-            <div className="ml-3 flex-1">
-              <p className="text-sm font-medium text-gray-900">
-                Delete Topic
-              </p>
-              <p className="mt-1 text-sm text-gray-500">
-                Are you sure you want to delete "{topicText}"?
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="flex border-l border-gray-200">
-          <button
-            onClick={() => {
-              toast.dismiss(t.id);
-              performDelete(chapterIndex, topicIndex, topicText);
-            }}
-            className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-rose-600 hover:text-rose-500 focus:outline-none"
-          >
-            Delete
-          </button>
+      <div className="bg-white p-4 rounded-lg shadow-lg border flex flex-col gap-3">
+        <p className="text-sm font-semibold text-gray-800">
+          Delete "{topicText}"?
+        </p>
+
+        <div className="flex gap-2 justify-end">
           <button
             onClick={() => toast.dismiss(t.id)}
-            className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-gray-700 hover:text-gray-500 focus:outline-none"
+            className="px-3 py-1 text-sm bg-gray-100 rounded-md"
           >
             Cancel
           </button>
+
+          <button
+            onClick={async (e) => {
+              e.stopPropagation();
+
+              toast.dismiss(t.id);
+
+              const deletePromise = axios.put("/api/edit-course", {
+                cid: course.cid,
+                chapterIndex,
+                topicIndex,
+                action: "delete",
+              });
+
+              toast.promise(deletePromise, {
+                loading: "Deleting topic...",
+                success: () => {
+                  setLocalTopics((prev) => {
+                    if (!prev[chapterIndex]) return prev;
+
+                    const updated = [...prev[chapterIndex]];
+                    updated.splice(topicIndex, 1);
+
+                    return {
+                      ...prev,
+                      [chapterIndex]: updated,
+                    };
+                  });
+                  return `"${topicText}" deleted successfully`;
+                },
+                error: (err) => err.response?.data?.error || "Delete failed",
+              });
+            }}
+            className="px-3 py-1 text-sm bg-red-500 text-white rounded-md"
+          >
+            Delete
+          </button>
         </div>
       </div>
-    ), {
-      duration: Infinity,
-    });
+    ));
   };
 
-  const performDelete = async (chapterIndex, topicIndex, topicText) => {
-    try {
-      const deletePromise = axios.put('/api/edit-course', {
-        cid: course.cid,
-        chapterIndex,
-        topicIndex,
-        action: 'delete'
-      });
+  const deleteChapter = (chapterIndex, chapterName) => {
+    toast.custom((t) => (
+      <div className="bg-white p-4 rounded-lg shadow-lg border flex flex-col gap-3">
+        <p className="text-sm font-semibold text-gray-800">
+          Delete chapter "{chapterName}"?
+        </p>
 
-      toast.promise(deletePromise, {
-        loading: 'Deleting topic...',
-        success: (res) => {
-          // Update local state instantly
-          setLocalTopics(prev => ({
-            ...prev,
-            [chapterIndex]: prev[chapterIndex].filter((_, idx) => idx !== topicIndex)
-          }));
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="px-3 py-1 text-sm bg-gray-100 rounded-md"
+          >
+            Cancel
+          </button>
 
-          // Remove any pending updates for this topic
-          setPendingUpdates(prev => 
-            prev.filter(update => 
-              !(update.chapterIndex === chapterIndex && update.topicIndex === topicIndex)
-            )
-          );
+          <button
+            onClick={async (e) => {
+              e.stopPropagation();
 
-          return `"${topicText}" deleted successfully!`;
-        },
-        error: (err) => {
-          return err.response?.data?.error || 'Failed to delete topic';
-        }
-      });
+              toast.dismiss(t.id);
 
-    } catch (error) {
-      console.error("Delete error:", error);
-    }
+              const deletePromise = axios.put("/api/edit-course", {
+                cid: course.cid,
+                chapterIndex,
+                action: "delete-chapter",
+              });
+
+              toast.promise(deletePromise, {
+                loading: "Deleting chapter...",
+                success: () => {
+                  setLocalChapters((prev) =>
+                    prev.filter((_, i) => i !== chapterIndex),
+                  );
+
+                  setLocalTopics((prev) => {
+                    const updated = {};
+                    Object.keys(prev).forEach((key) => {
+                      const k = Number(key);
+
+                      if (k < chapterIndex) updated[k] = prev[k];
+                      else if (k > chapterIndex) updated[k - 1] = prev[k];
+                    });
+
+                    return updated;
+                  });
+
+                  return `"${chapterName}" deleted successfully`;
+                },
+                error: (err) => err.response?.data?.error || "Delete failed",
+              });
+            }}
+            className="px-3 py-1 text-sm bg-red-500 text-white rounded-md"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    ));
   };
 
   const handleFinish = async () => {
@@ -250,49 +380,50 @@ function ChapterTopicList({ course }) {
       return;
     }
 
+    const courseId = course?.cid ?? course?.courses?.cid ?? course?.courseJson?.course?.cid;
+
+    if (!courseId) {
+      toast.error("Unable to save: course ID is missing. Refresh the page and try again.");
+      return;
+    }
+
     setIsSaving(true);
-    
+
     try {
-      const updatesByChapter = {};
-      pendingUpdates.forEach(update => {
-        if (!updatesByChapter[update.chapterIndex]) {
-          updatesByChapter[update.chapterIndex] = [];
-        }
-        updatesByChapter[update.chapterIndex].push(update);
+      // ✅ Build final course JSON from local state
+      const finalLocalState = {
+        course: {
+          ...courseLayout,
+          chapters: localChapters.map((chapter, idx) => ({
+            ...chapter,
+            topics: localTopics[idx] || [],
+          })),
+        },
+      };
+
+      const payload = {
+        cid: courseId,
+        updatedCourseJson: finalLocalState,
+      };
+
+      console.log("[ChapterTopicList] handleFinish payload:", payload);
+      const toastId = toast.loading("Saving all changes...");
+
+      await axios.put("/api/edit-course", payload);
+
+      toast.success("All changes saved successfully!", {
+        id: toastId,
       });
 
-      // Create an array of all update promises
-      const updatePromises = [];
-      
-      for (const chapterIndex in updatesByChapter) {
-        const chapterUpdates = updatesByChapter[chapterIndex];
-        
-        for (const update of chapterUpdates) {
-          updatePromises.push(
-            axios.put('/api/edit-course', {
-              cid: course.cid,
-              chapterIndex: update.chapterIndex,
-              topicIndex: update.topicIndex,
-              newTopicName: update.newTopicName,
-              action: update.action
-            })
-          );
-        }
-      }
-
-      // Show loading toast
-      const toastId = toast.loading(`Saving ${pendingUpdates.length} updates...`);
-
-      // Execute all updates
-      const results = await Promise.all(updatePromises);
-
-      // Clear pending updates
+      // ✅ Clear pending updates
       setPendingUpdates([]);
-      
-      toast.success(`Successfully saved ${results.length} updates!`, { id: toastId });
+
+      // ✅ Refresh data (VERY IMPORTANT)
+      queryClient.invalidateQueries(["courses", "dashboard"]);
+      queryClient.invalidateQueries(["course", course.cid]);
     } catch (error) {
-      toast.error(error.response?.data?.error || "Failed to save updates");
-      console.error("Finish error:", error);
+      console.error(error);
+      toast.error(error.response?.data?.error || "Failed to save changes");
     } finally {
       setIsSaving(false);
     }
@@ -305,7 +436,7 @@ function ChapterTopicList({ course }) {
         <h2 className="font-extrabold text-3xl mb-7 text-slate-800 tracking-tight">
           Chapters & Topics
         </h2>
-        <div className="flex flex-col items-center justify-center min-h-[400px] border border-emerald-100 rounded-2xl bg-linear-to-br from-emerald-50/50 to-white">
+        <div className="flex flex-col items-center justify-center min-h-100 border border-emerald-100 rounded-2xl bg-linear-to-br from-emerald-50/50 to-white">
           <div className="text-center">
             <div className="relative mx-auto w-16 h-16 mb-4">
               <div className="absolute inset-0 rounded-full border-4 border-emerald-200"></div>
@@ -333,14 +464,14 @@ function ChapterTopicList({ course }) {
         <h2 className="font-extrabold text-3xl mb-7 text-slate-800 tracking-tight">
           Chapters & Topics
         </h2>
-        <div className="flex flex-col items-center justify-center min-h-[300px] border border-emerald-100 rounded-2xl bg-linear-to-br from-emerald-50/50 to-white p-8">
+        <div className="flex flex-col items-center justify-center min-h-75 border border-emerald-100 rounded-2xl bg-linear-to-br from-emerald-50/50 to-white p-8">
           <Gift className="w-16 h-16 text-emerald-400 mb-4" />
           <h3 className="text-xl font-semibold text-emerald-800 mb-2">
             No Chapters Yet
           </h3>
           <p className="text-emerald-600 text-center max-w-md">
-            This course doesn't have any chapters yet. 
-            Click "Generate Content" to create chapters and topics for this course.
+            This course doesn't have any chapters yet. Click "Generate Content"
+            to create chapters and topics for this course.
           </p>
         </div>
       </div>
@@ -352,7 +483,7 @@ function ChapterTopicList({ course }) {
       <h2 className="font-extrabold text-3xl mb-7 text-slate-800 tracking-tight">
         Chapters & Topics ({courseLayout.chapters.length})
       </h2>
-      
+
       {/* Pending Updates Indicator */}
       {pendingUpdates.length > 0 && (
         <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
@@ -360,7 +491,8 @@ function ChapterTopicList({ course }) {
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-amber-500 rounded-full animate-pulse"></div>
               <span className="text-amber-800 font-medium">
-                {pendingUpdates.length} pending {pendingUpdates.length === 1 ? 'change' : 'changes'} 
+                {pendingUpdates.length} pending{" "}
+                {pendingUpdates.length === 1 ? "change" : "changes"}
               </span>
             </div>
             <span className="text-amber-600 text-sm">
@@ -371,47 +503,105 @@ function ChapterTopicList({ course }) {
       )}
 
       <div className="flex flex-col gap-6">
-        {courseLayout.chapters.map((chapter, idx) => (
+        {localChapters.map((chapter, idx) => (
           <div
             key={idx}
             className="border border-emerald-950 rounded-2xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg"
           >
-            <button
-              className="w-full flex flex-col items-start p-5 text-emerald-950 font-semibold hover:bg-emerald-50 transition-colors"
-              onClick={() => toggleChapter(idx)}
-            >
-              <div className="flex justify-between items-center w-full">
-                <div className="text-left">
-                  <h2 className="text-xl font-bold mb-2">
-                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 mr-3">
-                      {idx + 1}
-                    </span>
-                    {chapter.chapterName}
-                  </h2>
-                  <div className="flex gap-6 text-l text-emerald-800 font-medium">
-                    <span className="flex items-center gap-1">
-                      <span className="font-normal">{formatDurationFriendly(chapter.duration)}</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="font-normal">
-                        {(localTopics[idx] || chapter.topics || []).length} topics
+            <div className="w-full flex flex-col items-start p-5 text-emerald-950 font-semibold hover:bg-emerald-50 transition-colors">
+              <div className="w-full flex justify-between items-center">
+                {/* LEFT SIDE (ONLY THIS TOGGLES CHAPTER) */}
+                <div
+                  className="text-left flex-1 cursor-pointer"
+                  onClick={() => toggleChapter(idx)}
+                >
+                  {editingChapter === idx ? (
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-700">
+                        {idx + 1}
                       </span>
+
+                      <input
+                        value={editedChapterName}
+                        onChange={(e) => setEditedChapterName(e.target.value)}
+                        className="border px-2 py-1 rounded-md flex-1"
+                      />
+
+                      <button onClick={() => saveChapterEdit(idx)}>
+                        <Save size={16} />
+                      </button>
+
+                      <button onClick={() => setEditingChapter(null)}>
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <h2 className="text-xl font-bold mb-2 flex items-center">
+                      <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 mr-3">
+                        {idx + 1}
+                      </span>
+                      {chapter.chapterName}
+                    </h2>
+                  )}
+
+                  <div className="flex gap-6 text-l text-emerald-800 font-medium">
+                    <span className="font-normal">
+                      {formatDurationFriendly(chapter.duration)}
+                    </span>
+
+                    <span className="font-normal">
+                      {(localTopics[idx] ?? chapter.topics ?? []).length} topics
                     </span>
                   </div>
                 </div>
-                <span className="text-emerald-600">
-                  {openChapter === idx ? (
-                    <ChevronUp size={24} />
-                  ) : (
-                    <ChevronDown size={24} />
-                  )}
-                </span>
+
+                {/* RIGHT SIDE (NO PARENT CLICK IMPACT HERE) */}
+                <div className="flex items-center gap-3">
+                  {/* EDIT */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      startEditingChapter(idx, chapter.chapterName);
+                    }}
+                    className="p-1.5 text-slate-600 hover:bg-slate-100 rounded-md"
+                  >
+                    <Edit2 size={18} />
+                  </button>
+
+                  {/* DELETE */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      console.log("CHAPTER DELETE CLICKED");
+                      deleteChapter(idx, chapter.chapterName);
+                    }}
+                    className="p-1.5 text-red-500 hover:bg-red-100 rounded-md"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+
+                  {/* TOGGLE ICON */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleChapter(idx);
+                    }}
+                    className="text-emerald-600"
+                  >
+                    {openChapter === idx ? (
+                      <ChevronUp size={24} />
+                    ) : (
+                      <ChevronDown size={24} />
+                    )}
+                  </button>
+                </div>
               </div>
-            </button>
+            </div>
+
             <div
               className={`transition-all duration-300 overflow-hidden ${
                 openChapter === idx
-                  ? "max-h-[600px] p-5 border-t border-emerald-100 overflow-y-auto"
+                  ? "max-h-150 p-5 border-t border-emerald-100 overflow-y-auto"
                   : "max-h-0 p-0"
               } bg-slate-50`}
               style={{ minHeight: openChapter === idx ? "100px" : undefined }}
@@ -444,8 +634,8 @@ function ChapterTopicList({ course }) {
                           className="flex-1 px-3 py-1 border border-emerald-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                           autoFocus
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter') addNewTopic(idx);
-                            if (e.key === 'Escape') cancelAdding();
+                            if (e.key === "Enter") addNewTopic(idx);
+                            if (e.key === "Escape") cancelAdding();
                           }}
                         />
                         <button
@@ -468,73 +658,88 @@ function ChapterTopicList({ course }) {
                 )}
 
                 {/* Existing topics */}
-                {(localTopics[idx] || chapter.topics || []).length > 0 ? (
-                  (localTopics[idx] || chapter.topics).map((topic, topicIdx) => (
-                    <li
-                      key={topicIdx}
-                      className="flex items-center justify-between gap-3 bg-white rounded-lg px-4 py-3 border shadow-sm hover:bg-emerald-50 transition-all"
-                    >
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="text-emerald-600 bg-emerald-100 font-bold rounded-full w-8 h-8 flex items-center justify-center text-base">
-                          {topicIdx + 1}
+                {(localTopics[idx] ?? chapter.topics ?? []).length > 0 ? (
+                  (localTopics[idx] || chapter.topics).map(
+                    (topic, topicIdx) => (
+                      <li
+                        key={topicIdx}
+                        className="flex items-center justify-between gap-3 bg-white rounded-lg px-4 py-3 border shadow-sm hover:bg-emerald-50 transition-all"
+                      >
+                        <div className="flex items-center gap-3 flex-1">
+                          <div className="text-emerald-600 bg-emerald-100 font-bold rounded-full w-8 h-8 flex items-center justify-center text-base">
+                            {topicIdx + 1}
+                          </div>
+
+                          {editingTopic?.chapterIndex === idx &&
+                          editingTopic?.topicIndex === topicIdx ? (
+                            <div className="flex-1 flex items-center gap-2">
+                              <input
+                                type="text"
+                                value={editedText}
+                                onChange={(e) => setEditedText(e.target.value)}
+                                className="flex-1 px-3 py-1 border border-emerald-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                                autoFocus
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter")
+                                    saveEdit(idx, topicIdx);
+                                  if (e.key === "Escape") cancelEditing();
+                                }}
+                              />
+                              <button
+                                onClick={() => saveEdit(idx, topicIdx)}
+                                className="p-1.5 text-emerald-600 hover:bg-emerald-100 rounded-md transition-colors"
+                                title="Save"
+                              >
+                                <Save size={18} />
+                              </button>
+                              <button
+                                onClick={cancelEditing}
+                                className="p-1.5 text-rose-600 hover:bg-rose-100 rounded-md transition-colors"
+                                title="Cancel"
+                              >
+                                <X size={18} />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex-1 text-slate-800 font-semibold">
+                              {topic}
+                            </div>
+                          )}
                         </div>
-                        
-                        {editingTopic?.chapterIndex === idx && editingTopic?.topicIndex === topicIdx ? (
-                          <div className="flex-1 flex items-center gap-2">
-                            <input
-                              type="text"
-                              value={editedText}
-                              onChange={(e) => setEditedText(e.target.value)}
-                              className="flex-1 px-3 py-1 border border-emerald-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                              autoFocus
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') saveEdit(idx, topicIdx);
-                                if (e.key === 'Escape') cancelEditing();
-                              }}
-                            />
+
+                        {!(
+                          editingTopic?.chapterIndex === idx &&
+                          editingTopic?.topicIndex === topicIdx
+                        ) && (
+                          <div className="flex items-center gap-1">
                             <button
-                              onClick={() => saveEdit(idx, topicIdx)}
-                              className="p-1.5 text-emerald-600 hover:bg-emerald-100 rounded-md transition-colors"
-                              title="Save"
+                              onClick={() => startEditing(idx, topicIdx, topic)}
+                              className="p-1.5 text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+                              title="Edit topic"
                             >
-                              <Save size={18} />
+                              <Edit2 size={18} />
                             </button>
                             <button
-                              onClick={cancelEditing}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                console.log("DELETE CLICKED");
+                                deleteTopic(idx, topicIdx, topic);
+                              }}
                               className="p-1.5 text-rose-600 hover:bg-rose-100 rounded-md transition-colors"
-                              title="Cancel"
+                              title="Delete topic"
                             >
-                              <X size={18} />
+                              <Trash2 size={18} />
                             </button>
                           </div>
-                        ) : (
-                          <div className="flex-1 text-slate-800 font-semibold">{topic}</div>
                         )}
-                      </div>
-                      
-                      {!(editingTopic?.chapterIndex === idx && editingTopic?.topicIndex === topicIdx) && (
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => startEditing(idx, topicIdx, topic)}
-                            className="p-1.5 text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
-                            title="Edit topic"
-                          >
-                            <Edit2 size={18} />
-                          </button>
-                          <button
-                            onClick={() => deleteTopic(idx, topicIdx, topic)}
-                            className="p-1.5 text-rose-600 hover:bg-rose-100 rounded-md transition-colors"
-                            title="Delete topic"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        </div>
-                      )}
-                    </li>
-                  ))
+                      </li>
+                    ),
+                  )
                 ) : (
                   <li className="text-center py-4 text-emerald-600 italic">
-                    No topics defined for this chapter. Click "Add New Topic" above.
+                    No topics defined for this chapter. Click "Add New Topic"
+                    above.
                   </li>
                 )}
               </ul>
@@ -544,13 +749,40 @@ function ChapterTopicList({ course }) {
             </div>
           </div>
         ))}
+        <div className="text-center mt-6">
+          {addingChapter ? (
+            <div className="flex justify-center gap-2">
+              <input
+                value={newChapterName}
+                onChange={(e) => setNewChapterName(e.target.value)}
+                placeholder="Enter chapter name"
+                className="border px-3 py-2 rounded-md"
+              />
+
+              <button onClick={addNewChapter}>
+                <Save size={18} />
+              </button>
+
+              <button onClick={() => setAddingChapter(false)}>
+                <X size={18} />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setAddingChapter(true)}
+              className="bg-emerald-100 px-6 py-3 rounded-lg hover:bg-emerald-200"
+            >
+              + Add Chapter
+            </button>
+          )}
+        </div>
         <button
           onClick={handleFinish}
           disabled={isSaving || pendingUpdates.length === 0}
           className={`mx-auto mt-4 py-3 px-20 rounded-full text-white text-lg font-bold shadow-lg transition-colors ${
             isSaving || pendingUpdates.length === 0
-              ? 'bg-emerald-400 cursor-not-allowed'
-              : 'bg-emerald-950 hover:bg-emerald-900'
+              ? "bg-emerald-400 cursor-not-allowed"
+              : "bg-emerald-950 hover:bg-emerald-900"
           }`}
         >
           {isSaving ? (
@@ -559,7 +791,7 @@ function ChapterTopicList({ course }) {
               Saving...
             </div>
           ) : (
-            `Finish${pendingUpdates.length > 0 ? ` (${pendingUpdates.length})` : ''}`
+            `Finish${pendingUpdates.length > 0 ? ` (${pendingUpdates.length})` : ""}`
           )}
         </button>
       </div>

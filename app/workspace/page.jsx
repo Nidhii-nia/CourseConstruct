@@ -7,7 +7,6 @@ function Workspace() {
   return (
 <div className='m-0'>
       <WelcomeBanner/>
-      <EnrollCourseList />
       <CourseList />
       </div>
   )

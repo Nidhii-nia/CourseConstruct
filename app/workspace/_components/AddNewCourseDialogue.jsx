@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { v4 as uuid4 } from "uuid"; 
+import { v4 as uuid4 } from "uuid";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -26,11 +26,13 @@ import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { startLoading, stopLoading } from "@/app/components/RouteLoaderInner";
+import { useQueryClient } from "@tanstack/react-query";
 
 function AddNewCourseDialogue({ children }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -109,17 +111,29 @@ function AddNewCourseDialogue({ children }) {
         {
           headers: { "Content-Type": "application/json" },
           timeout: 180000,
-        }
+        },
       );
 
-      if(result.data.resp == 'limit exceeded'){
-        toast.warning('Limit exceeded switch to Premium!')
-        router.push('/workspace/billing')
-      }
-
-      if (result?.data?.success) {
+      if (result?.status === 200 && result?.data?.cid) {
         toast.success("🎉 Course Layout generated successfully!");
-        
+
+        // ✅ Instant UI update (NO DB call)
+        queryClient.setQueryData(["courses", "dashboard"], (old = []) => [
+          {
+            cid: result.data.cid,
+            name: formData.name,
+            description: formData.description,
+            noOfChapters: Number(formData.noOfChapters),
+            includeVideo: formData.includeVideo,
+            level: formData.level,
+            category: formData.category,
+            hasContent: false,
+            isDeleted: false,
+            bannerImgUrl: "",
+          },
+          ...old,
+        ]);
+
         if (mounted) {
           setIsOpen(false);
           resetForm();
@@ -127,40 +141,40 @@ function AddNewCourseDialogue({ children }) {
 
         router.push(`/workspace/edit-course/${result.data.cid}`);
       } else {
-        toast.error(result?.data?.error || "⚠️ Failed to generate course please try later.");
+        toast.error(
+          result?.data?.error ||
+            "⚠️ Failed to generate course please try later.",
+        );
       }
     } catch (error) {
       console.error("❌ Error generating course:", error);
-      
-      // Add 401 error handling here
+
       if (error.response?.status === 401) {
         toast.error("Please sign in to create a course");
-        // Redirect to sign-in page
         window.location.href = "/sign-in";
-        return; // Stop further execution
+        return;
       }
-      
-      // Handle 403 error (free user limit)
+
       if (error.response?.status === 403) {
-        if (error.response?.data?.code === "LIMIT_EXCEEDED") {
-          toast.warning("Free users can only create one course. Upgrade to premium!");
-          router.push('/workspace/billing');
+        if (error.response?.data?.error === "LIMIT_EXCEEDED") {
+          toast.warning(
+            "Free users can only create one course. Upgrade to premium!",
+          );
+          router.push("/workspace/billing");
           return;
         }
       }
-      
-      // Don't update state if component is unmounted
+
       if (!mounted) return;
-      
+
       toast.error(
-        error.response?.data?.error || error.message ||
-          "Failed to generate course. Please check your internet connection."
+        error.response?.data?.error ||
+          error.message ||
+          "Failed to generate course.",
       );
     } finally {
-      if (mounted) {
-        setIsLoading(false);
-      }
-      stopLoading(); // No delay needed
+      if (mounted) setIsLoading(false);
+      stopLoading();
     }
   };
 
@@ -174,25 +188,21 @@ function AddNewCourseDialogue({ children }) {
   // Prevent server-side rendering of the Dialog to avoid hydration mismatch
   if (!mounted) {
     // Return a placeholder with same dimensions to avoid layout shift
-    return (
-      <div className="inline-block">
-        {children}
-      </div>
-    );
+    return <div className="inline-block">{children}</div>;
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] md:max-w-[550px] max-h-[85vh] overflow-y-auto p-4 sm:p-6">
+      <DialogContent className="sm:max-w-125 md:max-w-137.5 max-h-[85vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl font-bold">
             <Sparkles className="w-5 h-5 text-primary" />
             Create New Course
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Fill in the details below to generate a new course structure.
-            AI will help create a comprehensive course layout.
+            Fill in the details below to generate a new course structure. AI
+            will help create a comprehensive course layout.
           </DialogDescription>
         </DialogHeader>
 
@@ -225,7 +235,9 @@ function AddNewCourseDialogue({ children }) {
               id="description"
               placeholder="Brief description of what this course covers..."
               value={formData.description}
-              onChange={(e) => onHandleInputChange("description", e.target.value)}
+              onChange={(e) =>
+                onHandleInputChange("description", e.target.value)
+              }
               disabled={isLoading}
               rows={3}
               className="resize-none"
@@ -244,7 +256,9 @@ function AddNewCourseDialogue({ children }) {
             </div>
             <Switch
               checked={formData.includeVideo}
-              onCheckedChange={(checked) => onHandleInputChange("includeVideo", checked)}
+              onCheckedChange={(checked) =>
+                onHandleInputChange("includeVideo", checked)
+              }
               disabled={isLoading}
             />
           </div>
@@ -261,12 +275,14 @@ function AddNewCourseDialogue({ children }) {
               max="20"
               placeholder="Enter number of chapters (1-20)"
               value={formData.noOfChapters}
-              onChange={(e) => onHandleInputChange("noOfChapters", e.target.value)}
+              onChange={(e) =>
+                onHandleInputChange("noOfChapters", e.target.value)
+              }
               disabled={isLoading}
               className="w-full"
             />
             <p className="text-xs text-muted-foreground">
-              Recommended: 5-10 chapters for optimal learning
+              Recommended: 4-7 chapters for optimal learning
             </p>
           </div>
 

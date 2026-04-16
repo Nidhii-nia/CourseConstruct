@@ -2,22 +2,26 @@ import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/config/db";
 import { coursesTable } from "@/config/schema";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, and, sql } from "drizzle-orm";
+
+export const runtime = "nodejs";
 
 export async function GET(req) {
   try {
-    const headers = new Headers();
-    headers.set("Cache-Control", "no-store, max-age=0");
-
     const { searchParams } = new URL(req.url);
-    const courseId = searchParams?.get("courseId");
-    const user = await currentUser();
+    const courseId = searchParams.get("courseId");
+    let user = null;
 
-    let result;
+    try {
+      user = await currentUser();
+    } catch (err) {
+      console.error("Clerk error:", err);
+    }
 
-    // Handle courseId=0 case - return ALL courses
+    let result = [];
+
+    // 🔹 CASE 1: Fetch ALL courses (filters isDeleted = false)
     if (courseId === "0") {
-      console.log("🔍 Fetching ALL courses (courseId=0)");
       result = await db
         .select({
           cid: coursesTable.cid,
@@ -25,14 +29,21 @@ export async function GET(req) {
           bannerImgUrl: coursesTable.bannerImgUrl,
           noOfChapters: coursesTable.noOfChapters,
           hasContent: coursesTable.hasContent,
+          isPublished: coursesTable.isPublished,
           courseJson: coursesTable.courseJson,
         })
         .from(coursesTable)
-          .where(eq(coursesTable.hasContent, false)) 
+        .where(
+          and(
+            eq(coursesTable.hasContent, false),
+            eq(coursesTable.isDeleted, false),
+          ),
+        )
         .orderBy(desc(coursesTable.id))
-        .limit(50); // Limit to prevent too many results
-    } 
-    // Handle specific courseId
+        .limit(50);
+    }
+
+    // 🔹 CASE 2: Fetch specific course (filters isDeleted = false)
     else if (courseId) {
       result = await db
         .select({
@@ -41,43 +52,66 @@ export async function GET(req) {
           bannerImgUrl: coursesTable.bannerImgUrl,
           noOfChapters: coursesTable.noOfChapters,
           hasContent: coursesTable.hasContent,
+          isPublished: coursesTable.isPublished,
           courseJson: coursesTable.courseJson,
         })
         .from(coursesTable)
-        .where(eq(coursesTable.cid, courseId))
+        .where(
+          and(
+            eq(coursesTable.cid, courseId),
+            eq(coursesTable.isDeleted, false),
+          ),
+        )
         .limit(1);
-    } 
-    // No courseId provided - fetch current user's courses
+    }
+
+    // 🔹 CASE 3: Fetch user courses (ONLY CHANGE HERE ✅)
     else {
-      if (!user?.primaryEmailAddress?.emailAddress) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers });
+      const email = user?.primaryEmailAddress?.emailAddress;
+
+      if (!email) {
+        return NextResponse.json(
+          { success: false, error: "Unauthorized" },
+          { status: 401 },
+        );
       }
 
-      result = await db
-        .select({
-          cid: coursesTable.cid,
-          name: coursesTable.name,
-          bannerImgUrl: coursesTable.bannerImgUrl,
-          noOfChapters: coursesTable.noOfChapters,
-          hasContent: coursesTable.hasContent,
-          courseJson: coursesTable.courseJson,
-        })
-        .from(coursesTable)
-        .where(eq(coursesTable.useremail, user.primaryEmailAddress.emailAddress))
-        .orderBy(desc(coursesTable.id))
-        .limit(20);
+      const data = await db.execute(sql`
+        SELECT 
+          c."cid",
+          c."name",
+          c."bannerImgUrl",
+          c."noOfChapters",
+          c."hasContent",
+          c."isDeleted",
+          c."isPublished",
+
+          -- ✅ ONLY CHANGE: extract description from JSON
+          c."courseJson"->'course'->>'description' AS description
+
+        FROM ${coursesTable} c
+        WHERE c."useremail" = ${email}
+        AND c."isDeleted" = false
+        ORDER BY c."id" DESC
+        LIMIT 20
+      `);
+
+      result = data.rows;
     }
 
     return NextResponse.json({
       success: true,
       courses: result || [],
-    }, { headers });
-
+    });
   } catch (error) {
-    console.error("❌ Error fetching courses:", error);
+    console.error("Error fetching courses:", error);
+
     return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
+      {
+        success: false,
+        error: error.message || "Internal Server Error",
+      },
+      { status: 500 },
     );
   }
 }

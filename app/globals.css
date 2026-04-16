@@ -168,6 +168,71 @@ body:has(.fixed) {
   --sidebar-ring: oklch(0.553 0.013 58.071);
 }
 
+.course-content {
+  font-size: 16px;
+  line-height: 1.9;
+  color: var(--foreground);
+}
+
+.dark .course-content {
+  color: var(--foreground);
+}
+
+/* Headings */
+.course-content h1,
+.course-content h2,
+.course-content h3 {
+  color: #065f46;
+  font-weight: 700;
+  margin-top: 1.4em;
+  margin-bottom: 0.6em;
+}
+
+.course-content h2 {
+  font-size: 1.4rem;
+  border-bottom: 2px solid #10b981;
+  padding-bottom: 4px;
+}
+
+.course-content h3 {
+  font-size: 1.2rem;
+}
+
+/* Paragraphs */
+.course-content p {
+  margin-bottom: 0.9em;
+}
+
+/* Lists */
+.course-content ul {
+  padding-left: 1.2rem;
+}
+
+.course-content li {
+  margin-bottom: 0.4em;
+}
+
+/* 🔥 Highlight Example / Question / Answer */
+.course-content p:has(strong) {
+  background: #ecfdf5;
+  padding: 10px 12px;
+  border-left: 4px solid #10b981;
+  border-radius: 6px;
+  margin-top: 10px;
+}
+
+/* Inline code */
+.course-content code {
+  background: #d1fae5;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Improve spacing */
+.course-content > * + * {
+  margin-top: 0.6em;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

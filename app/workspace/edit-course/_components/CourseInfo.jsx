@@ -14,48 +14,39 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { startLoading, stopLoading } from "@/app/components/RouteLoaderInner";
+import { useQueryClient } from "@tanstack/react-query";
+import { size } from "lodash";
 
 // === Duration Parser ===
 function parseDurationToMinutes(duration) {
   if (!duration) return 0;
 
-  // If already a number (minutes)
   if (typeof duration === "number") return duration;
 
   const str = String(duration).toLowerCase().trim();
-
   let total = 0;
 
-  // hours (hr, hrs, hour, hours, h)
   const hourMatch = str.match(/(\d+(\.\d+)?)\s*(h|hr|hrs|hour|hours)/);
-  if (hourMatch) {
-    total += Math.round(parseFloat(hourMatch[1]) * 60);
-  }
+  if (hourMatch) total += Math.round(parseFloat(hourMatch[1]) * 60);
 
-  // minutes (min, mins, minute, minutes, m)
   const minMatch = str.match(/(\d+)\s*(m|min|mins|minute|minutes)/);
-  if (minMatch) {
-    total += parseInt(minMatch[1], 10);
-  }
+  if (minMatch) total += parseInt(minMatch[1], 10);
 
-  // HH:MM format
   if (str.includes(":")) {
     const [h, m] = str.split(":").map(Number);
     if (!isNaN(h)) total += h * 60;
     if (!isNaN(m)) total += m;
   }
 
-  // plain number string fallback
   if (total === 0 && /^\d+$/.test(str)) {
     total = parseInt(str, 10);
   }
 
   return total;
 }
-
 
 // === Friendly Duration Formatter ===
 function formatDurationFriendly(minutes) {
@@ -72,118 +63,173 @@ function formatDurationFriendly(minutes) {
 function CourseInfo({ course, viewCourse }) {
   const courseLayout = course?.courseJson?.course;
   const chapters = courseLayout?.chapters;
+
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const queryClient = useQueryClient();
 
-  const GenerateCourseContent = async () => {
-    if (loading) return;
+const hasContent = course?.hasContent;
 
-    setLoading(true);
-    startLoading();
 
-    try {
-      const clientRequestId = uuid4();
-      await axios.post("/api/generate-course-content", {
-        courseJson: courseLayout,
-        courseTitle: course?.name,
-        courseId: course?.cid,
-        clientRequestId,
-      });
+const showConfirmToast = () => {
+  toast.custom(
+    (t) => (
+      <div className="max-w-sm w-full bg-white rounded-xl shadow-lg border p-4">
+        
+        {/* Text */}
+        <div className="mb-3">
+          <p className="font-semibold text-gray-900 text-sm">
+            Regenerate content?
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            This will overwrite existing course content.
+          </p>
+        </div>
 
-      toast.success("🎉 Content Generated Successfully!");
-      router.replace("/workspace");
-    } catch (e) {
-      console.error("Generate content error:", e);
-      toast.error("Server side error! Please try again.");
-    } finally {
-      setLoading(false);
-      stopLoading();
-    }
-  };
+        {/* Buttons */}
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="px-3 py-1.5 text-sm rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700"
+          >
+            Cancel
+          </button>
 
+          <button
+            onClick={() => {
+              toast.dismiss(t.id);
+              handleGenerate();
+            }}
+            className="px-3 py-1.5 text-sm rounded-md bg-red-600 hover:bg-red-700 text-white"
+          >
+            Continue
+          </button>
+        </div>
+      </div>
+    ),
+    { duration: Infinity }
+  );
+};
+
+const handleGenerate = async () => {
+  setLoading(true);
+  startLoading();
+
+  try {
+    const clientRequestId = uuid4();
+
+    await axios.post("/api/generate-course-content", {
+      courseJson: courseLayout,
+      courseTitle: course?.name,
+      courseId: course?.cid,
+      clientRequestId,
+    });
+
+    toast.success("🎉 Content Generated Successfully!");
+
+    queryClient.invalidateQueries(["courses", "dashboard"]);
+
+    router.replace("/workspace");
+  } catch (e) {
+    console.error("Generate course error:", e);
+    toast.error("Server side error! Please try again.");
+  } finally {
+    setLoading(false);
+    stopLoading();
+  }
+};
+
+const GenerateCourseContent = () => {
+  if (loading) return;
+
+  if (hasContent) {
+    showConfirmToast(); // 👈 show UI
+    return;
+  }
+
+  handleGenerate(); // 👈 direct call
+};
+
+  // ✅ total duration (ONLY from DB data)
   const totalMinutes =
     chapters?.reduce((sum, chapter) => {
       return sum + parseDurationToMinutes(chapter.duration);
     }, 0) || 0;
 
   return (
-    <div className="flex flex-col-reverse lg:flex-row gap-6 lg:gap-8 justify-between shadow-2xl border border-amber-950 rounded-2xl p-4 lg:p-6">
-      {/* Left Content - Takes more space on large screens */}
+    <div className="flex flex-col-reverse lg:flex-row flex-wrap gap-6 lg:gap-8 justify-between shadow-2xl border border-amber-950 rounded-2xl p-4 lg:p-6 overflow-x-hidden">
+      
+      {/* LEFT */}
       <div className="flex-1 flex flex-col gap-6">
         <div>
-          <h2 className="font-bold text-2xl lg:text-3xl">
+          <h2 className="font-bold text-3xl">
             {courseLayout?.name || course?.name || "Untitled Course"}
           </h2>
-          <p className="line-clamp-2 lg:line-clamp-3 text-gray-500 mt-2 lg:mt-3 text-sm lg:text-base">
+          <p className="text-gray-500 mt-3 line-clamp-6">
             {courseLayout?.description ||
               course?.description ||
               "No description available"}
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 lg:gap-4">
-          <div className="flex gap-3 lg:gap-4 items-center p-3 lg:p-4 rounded-lg border border-amber-900 bg-amber-50/30">
-            <Clock className="text-yellow-500 w-5 h-5 lg:w-5 lg:h-5 shrink-0" />
-            <section className="min-w-0">
-              <h2 className="font-bold text-xs lg:text-xs text-gray-600">
-                Duration
-              </h2>
-              <h2 className="text-sm lg:text-sm font-semibold text-gray-800 truncate">
+        {/* STATS */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          
+          <div className="flex gap-4 items-center p-4 rounded-lg border bg-amber-50/30 w-35 m-1">
+            <Clock className="text-yellow-500 w-12 h-12" />
+            <div>
+              <h2 className="text-xs text-gray-600">Duration</h2>
+              <h2 className="font-semibold">
                 {formatDurationFriendly(totalMinutes)}
               </h2>
-            </section>
+            </div>
           </div>
-          <div className="flex gap-3 lg:gap-4 items-center p-3 lg:p-4 rounded-lg border border-amber-900 bg-amber-50/30">
-            <Book className="text-green-500 w-5 h-5 lg:w-5 lg:h-5 shrink-0" />
-            <section className="min-w-0">
-              <h2 className="font-bold text-xs lg:text-xs text-gray-600">
-                Chapters
+
+          <div className="flex gap-4 items-center p-4 rounded-lg border bg-amber-50/30 w-35 m-1">
+            <Book className="text-green-500 w-12 h-12" />
+            <div>
+              <h2 className="text-xs text-gray-600">Chapters</h2>
+              <h2 className="font-semibold">
+                {chapters?.length || 0}
               </h2>
-              <h2 className="text-sm lg:text-sm font-semibold text-gray-800">
-                {chapters?.length || course?.noOfChapters || 0}
-              </h2>
-            </section>
+            </div>
           </div>
-          <div className="flex gap-3 lg:gap-4 items-center p-3 lg:p-4 rounded-lg border border-amber-900 bg-amber-50/30">
-            <TrendingUpDownIcon className="text-red-500 w-5 h-5 lg:w-5 lg:h-5 shrink-0" />
-            <section className="min-w-0">
-              <h2 className="font-bold text-xs lg:text-xs text-gray-600">
-                Difficulty
-              </h2>
-              <h2 className="text-sm lg:text-sm font-semibold text-gray-800 truncate">
+
+          <div className="flex gap-4 items-center p-4 rounded-lg border bg-amber-50/30 w-40 m-1">
+            <TrendingUpDownIcon className="text-red-500 w-12 h-12" />
+            <div>
+              <h2 className="text-xs text-gray-600">Difficulty</h2>
+              <h2 className="font-semibold">
                 {course?.level || "Beginner"}
               </h2>
-            </section>
+            </div>
           </div>
         </div>
 
-        <div className="mt-2 lg:mt-4">
+        {/* BUTTON */}
+        <div className="mt-4">
           {!viewCourse ? (
             <Button
               onClick={GenerateCourseContent}
               disabled={loading}
-              className="relative w-full lg:w-full px-6 lg:px-8 py-3 lg:py-4 text-sm lg:text-base"
+              className="w-full py-4"
             >
               {loading ? (
                 <>
-                  <Loader2 className="w-4 h-4 lg:w-5 lg:h-5 mr-2 animate-spin" />
+                  <Loader2 className="mr-2 animate-spin" />
                   Generating...
-                  <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
-                  </span>
                 </>
               ) : (
                 <>
-                  <Settings2Icon className="w-4 h-4 lg:w-5 lg:h-5 mr-2" />
-                  Generate Content
+                  <Settings2Icon className="mr-2" />
+                  {hasContent ? "Regenerate Content" : "Generate Content"}
                 </>
               )}
             </Button>
           ) : (
             <Link href={`/course/${course?.cid}`}>
-              <Button className="w-full lg:w-auto px-6 lg:px-8 py-3 lg:py-4 text-sm lg:text-base bg-primary hover:from-green-700 hover:to-emerald-700">
-                <PlaySquareIcon className="w-4 h-4 lg:w-5 lg:h-5 mr-2" />
+              <Button className="w-full py-4">
+                <PlaySquareIcon className="mr-2" />
                 Resume Learning
               </Button>
             </Link>
@@ -191,14 +237,14 @@ function CourseInfo({ course, viewCourse }) {
         </div>
       </div>
 
-      {/* Right Image - Fixed width on large screens */}
-      <div className="lg:w-96 xl:w-[420px] shrink-0">
+      {/* RIGHT IMAGE */}
+      <div className="w-full lg:max-w-sm">
         <Image
           src={course?.bannerImgUrl || "/books.png"}
-          alt={"Banner Image"}
+          alt="Banner"
           width={400}
           height={400}
-          className="w-full h-60 lg:h-64 xl:h-72 rounded-2xl object-cover shadow-lg lg:shadow-xl"
+          className="w-full h-64 rounded-2xl object-cover"
         />
       </div>
     </div>

@@ -95,6 +95,7 @@ function EditCourse({viewCourse=false}) {
       {chapters.length > 0 && (
         <div className="mt-10">
           <ChapterTopicList course={course} />
+
         </div>
       )}
       

@@ -1,20 +1,16 @@
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import Provider from "./provider";
-import { Toaster } from "sonner"; 
-
-import { EnrollProvider } from "@/context/EnrollContext";
+import { Toaster } from "sonner";
 import RouteLoader from "@/app/components/RouteLoader";
+import ReactQueryProvider from "./react-query-provider";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+// ✅ Use stable font instead of Geist
+import { Inter } from "next/font/google";
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const inter = Inter({
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata = {
@@ -26,15 +22,13 @@ export default function RootLayout({ children }) {
   return (
     <ClerkProvider>
       <html lang="en">
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased bg-secondary`}
-        >
+        <body className={`${inter.className} antialiased bg-secondary`}>
           <Provider>
-            <EnrollProvider>     {/* ✅ Wrap the entire app */}
+            <ReactQueryProvider>
               <RouteLoader />
               {children}
               <Toaster richColors position="top-right" />
-            </EnrollProvider>
+            </ReactQueryProvider>
           </Provider>
         </body>
       </html>

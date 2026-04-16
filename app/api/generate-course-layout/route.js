@@ -4,7 +4,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { v4 as uuid4 } from "uuid";
 import { InferenceClient } from "@huggingface/inference";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { Groq } from "groq-sdk";
 
 // --------------------------------------------------
@@ -46,7 +46,7 @@ Schema:
     ]
   }
 }
-
+Rule - give 3 - 4topics per chapter only
 , User Input:  `;
 
 // Initialize Groq client
@@ -66,7 +66,7 @@ export async function POST(req) {
     if (!clientRequestId) {
       return NextResponse.json(
         { error: "clientRequestId is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -81,7 +81,7 @@ export async function POST(req) {
     if (!user) {
       return NextResponse.json(
         { error: "Unauthorized - User not logged in" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -91,7 +91,12 @@ export async function POST(req) {
     const existing = await db
       .select()
       .from(coursesTable)
-      .where(eq(coursesTable.clientRequestIdContent, clientRequestId));
+      .where(
+        and(
+          eq(coursesTable.clientRequestIdContent, clientRequestId),
+          eq(coursesTable.isDeleted, false),
+        ),
+      );
 
     if (existing.length > 0) {
       return NextResponse.json({
@@ -102,24 +107,45 @@ export async function POST(req) {
     }
 
     // --------------------------------------------------
-    // 1. Check duplicate course name
+    // 1. Sanitize form data early
+    // --------------------------------------------------
+    const sanitizedName = formData.name?.trim() || "";
+    const sanitizedNoOfChapters = parseInt(formData.noOfChapters ?? "0", 10);
+
+    if (!sanitizedName) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Course name is required",
+        },
+        { status: 400 },
+      );
+    }
+
+    // 2. Check duplicate course name
     // --------------------------------------------------
     const duplicateName = await db
       .select()
       .from(coursesTable)
-      .where(eq(coursesTable.name, formData.name));
+      .where(
+        and(
+          eq(coursesTable.name, sanitizedName),
+          eq(coursesTable.isDeleted, false),
+        ),
+      );
 
     if (duplicateName.length > 0) {
       return NextResponse.json(
         {
+          success: false,
           error: "Course with this name already exists",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // --------------------------------------------------
-    // 2. Generate Course using Groq
+    // 3. Generate Course using Groq
     // --------------------------------------------------
     let retries = 3;
     let rawText = "";
@@ -130,13 +156,31 @@ export async function POST(req) {
         .select()
         .from(coursesTable)
         .where(
-          eq(coursesTable.useremail, user?.primaryEmailAddress?.emailAddress)
+          and(
+            eq(coursesTable.useremail, user?.primaryEmailAddress?.emailAddress),
+            eq(coursesTable.isDeleted, false),
+          ),
         );
 
       if (result?.length >= 1) {
-        return NextResponse.json({ resp: "limit exceeded" });
+        return NextResponse.json(
+          {
+            success: false,
+            error: "LIMIT_EXCEEDED",
+          },
+          { status: 403 },
+        );
       }
     }
+
+    const safeFormData = {
+      name: sanitizedName,
+      description: formData.description?.slice(0, 200) || "",
+      category: formData.category || "",
+      level: formData.level || "",
+      includeVideo: formData.includeVideo,
+      noOfChapters: sanitizedNoOfChapters,
+    };
 
     while (retries > 0) {
       try {
@@ -144,14 +188,14 @@ export async function POST(req) {
           messages: [
             {
               role: "user",
-              content: PROMPT + JSON.stringify(formData),
+              content: PROMPT + JSON.stringify(safeFormData),
             },
           ],
-          model: "openai/gpt-oss-120b", // Using the exact model from your example
+          model: "openai/gpt-oss-120b",
           temperature: 1,
-          max_completion_tokens: 8192,
+          max_completion_tokens: 2000,
           top_p: 1,
-          stream: false, // Changed to false for easier handling
+          stream: false,
           reasoning_effort: "medium",
           stop: null,
         });
@@ -166,7 +210,7 @@ export async function POST(req) {
           console.log(
             `Rate limit hit. Retrying in ${retryAfter}s... attempt left: ${
               retries - 1
-            }`
+            }`,
           );
           await wait(retryAfter * 1000);
           retries--;
@@ -179,8 +223,8 @@ export async function POST(req) {
 
     if (!rawText) {
       return NextResponse.json(
-        { error: "Failed to generate course after retries" },
-        { status: 500 }
+        { success: false, error: "AI generation failed" },
+        { status: 500 },
       );
     }
 
@@ -189,8 +233,11 @@ export async function POST(req) {
     if (!jsonMatch) {
       console.error("AI returned no JSON:", rawText);
       return NextResponse.json(
-        { error: "AI returned no JSON", raw: rawText },
-        { status: 500 }
+        {
+          success: false,
+          error: "AI returned no JSON",
+        },
+        { status: 500 },
       );
     }
 
@@ -200,8 +247,11 @@ export async function POST(req) {
     } catch (err) {
       console.error("Invalid JSON from AI:", jsonMatch[0]);
       return NextResponse.json(
-        { error: "AI returned invalid JSON", raw: jsonMatch[0] },
-        { status: 500 }
+        {
+          success: false,
+          error: "AI returned invalid JSON",
+        },
+        { status: 500 },
       );
     }
 
@@ -234,7 +284,7 @@ export async function POST(req) {
     console.error("Internal Error:", err);
     return NextResponse.json(
       { error: "Internal Server Error", details: err.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
