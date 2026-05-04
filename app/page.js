@@ -93,7 +93,7 @@ export default function Home() {
             {/* Right - AI Visualizer */}
             <div className="relative">
               {/* Main AI Visualization Card */}
-              <div className="relative h-[550px] rounded-3xl overflow-hidden bg-linear-to-br from-emerald-900/30 via-gray-900/50 to-emerald-800/30 border border-emerald-500/20 backdrop-blur-sm shadow-2xl shadow-emerald-900/30">
+              <div className="relative h-137.5 rounded-3xl overflow-hidden bg-linear-to-br from-emerald-900/30 via-gray-900/50 to-emerald-800/30 border border-emerald-500/20 backdrop-blur-sm shadow-2xl shadow-emerald-900/30">
                 {/* Animated Neural Network Lines */}
                 <div className="absolute inset-0 opacity-40">
                   <svg className="w-full h-full" viewBox="0 0 400 550">

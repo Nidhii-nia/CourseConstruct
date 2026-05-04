@@ -125,7 +125,7 @@ const handleGenerate = async () => {
       clientRequestId,
     });
 
-    toast.success("🎉 Content Generated Successfully!");
+    toast.success(" Content Generated Successfully!");
 
     queryClient.invalidateQueries(["courses", "dashboard"]);
 

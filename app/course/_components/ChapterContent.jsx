@@ -12,7 +12,7 @@ import { toast } from "sonner";
 
 function ChapterContent({ courseInfo, topicRefs, refreshData }) {
   const { courseId } = useParams();
-const enrollCourse = courseInfo?.enrollCourse;
+  const enrollCourse = courseInfo?.enrollCourse;
   const courseContent = courseInfo?.courses?.courseContent || [];
   const { selectedChapterIndex } = useContext(SelectedChapterIndexContext);
   const { isCollapsed } = useSidebar();
@@ -48,101 +48,115 @@ const enrollCourse = courseInfo?.enrollCourse;
     playersRef.current[index] = event.target;
   };
 
-  const markChapterCompleted = async () => {
-    if (completing || incompleting) return;
+const markChapterCompleted = async () => {
+  if (completing || incompleting) return;
 
-    setCompleting(true);
+  setCompleting(true);
 
-    try {
-      // INSTANT: Change button state
-      setLocalIsCompleted(true);
+  const completedChapters = enrollCourse?.completedChapters ?? [];
+  const updatedChapters = Array.from(
+    new Set([...completedChapters, selectedChapterIndex])
+  );
 
-      // Get current completed chapters
-      const completedChapters = enrollCourse?.completedChapters ?? [];
-      const updatedChapters = [...completedChapters, selectedChapterIndex];
+  try {
+    // ✅ INSTANT UI UPDATE
+    setLocalIsCompleted(true);
 
-      // Call API in background
-      axios
-        .put("/api/enroll-course", {
-          courseId,
+    // ✅ INSTANT SIDEBAR UPDATE
+    if (refreshData) {
+      refreshData({
+        ...courseInfo,
+        enrollCourse: {
+          ...courseInfo?.enrollCourse,
           completedChapters: updatedChapters,
-        })
-        .then(() => {
-          toast.success("Marked as Completed!");
-          // Refresh parent in background
-          if (refreshData) {
-            refreshData({
-              ...courseInfo,
-              enrollCourse: {
-                ...courseInfo?.enrollCourse,
-                completedChapters: updatedChapters,
-              },
-            });
-          }
-        })
-        .catch((error) => {
-          console.error("API Error:", error);
-          // Revert on error
-          setLocalIsCompleted(false);
-          toast.error("Failed to save");
-        });
-    } catch (error) {
-      console.error("Error:", error);
-      setLocalIsCompleted(false);
-      toast.error("Failed to mark as completed");
-    } finally {
-      setCompleting(false);
+        },
+      });
     }
-  };
 
-  const markIncompleteChapter = async () => {
-    if (incompleting || completing) return;
+    // ✅ API CALL (background)
+    await axios.put("/api/enroll-course", {
+      courseId,
+      completedChapters: updatedChapters,
+    });
 
-    setIncompleting(true);
+    toast.success("Marked as Completed!");
 
-    try {
-      // INSTANT: Change button state
-      setLocalIsCompleted(false);
+  } catch (error) {
+    console.error("API Error:", error);
 
-      // Get current completed chapters
-      const completedChapters = enrollCourse?.completedChapters ?? [];
-      const updatedChapters = completedChapters.filter(
-        (item) => item !== selectedChapterIndex,
-      );
+    // ❗ ROLLBACK
+    setLocalIsCompleted(false);
 
-      // Call API in background
-      axios
-        .put("/api/enroll-course", {
-          courseId,
+    if (refreshData) {
+      refreshData({
+        ...courseInfo,
+        enrollCourse: {
+          ...courseInfo?.enrollCourse,
+          completedChapters: completedChapters,
+        },
+      });
+    }
+
+    toast.error("Failed to save");
+  } finally {
+    setCompleting(false);
+  }
+};
+
+const markIncompleteChapter = async () => {
+  if (incompleting || completing) return;
+
+  setIncompleting(true);
+
+  const completedChapters = enrollCourse?.completedChapters ?? [];
+  const updatedChapters = completedChapters.filter(
+    (item) => item !== selectedChapterIndex
+  );
+
+  try {
+    // ✅ INSTANT UI UPDATE
+    setLocalIsCompleted(false);
+
+    // ✅ INSTANT SIDEBAR UPDATE
+    if (refreshData) {
+      refreshData({
+        ...courseInfo,
+        enrollCourse: {
+          ...courseInfo?.enrollCourse,
           completedChapters: updatedChapters,
-        })
-        .then(() => {
-          toast.success("Marked as Incomplete!");
-          // Refresh parent in background
-          if (refreshData) {
-            refreshData({
-              ...courseInfo,
-              enrollCourse: {
-                ...courseInfo?.enrollCourse,
-                completedChapters: updatedChapters,
-              },
-            });
-          }
-        })
-        .catch((error) => {
-          console.error("API Error:", error);
-          // Revert on error
-          setLocalIsCompleted(true);
-          toast.error("Failed to save");
-        });
-    } catch (error) {
-      console.error("Error:", error);
-      setLocalIsCompleted(true);
-      toast.error("Failed to mark as incomplete");
-    } finally {
-      setIncompleting(false);
+        },
+      });
     }
-  };
+
+    // ✅ API CALL
+    await axios.put("/api/enroll-course", {
+      courseId,
+      completedChapters: updatedChapters,
+    });
+
+    toast.success("Marked as Incomplete!");
+
+  } catch (error) {
+    console.error("API Error:", error);
+
+    // ❗ ROLLBACK
+    setLocalIsCompleted(true);
+
+    if (refreshData) {
+      refreshData({
+        ...courseInfo,
+        enrollCourse: {
+          ...courseInfo?.enrollCourse,
+          completedChapters: completedChapters,
+        },
+      });
+    }
+
+    toast.error("Failed to save");
+  } finally {
+    setIncompleting(false);
+  }
+};
 
   // Show loading only if no courseInfo at all
 
@@ -171,17 +185,17 @@ const enrollCourse = courseInfo?.enrollCourse;
             {!localIsCompleted ? (
               <Button
                 onClick={markChapterCompleted}
-                disabled={completing}
-                className={`w-full sm:w-auto min-w-40`}
+                disabled={completing || incompleting || localIsCompleted}
+                className="w-full sm:w-auto min-w-40"
                 size="sm"
               >
                 {completing ? (
-                  <span className="flex items-center justify-center gap-2">
+                  <span className="flex items-center gap-2">
                     <Loader2 className="w-3 h-3 animate-spin" />
                     Marking...
                   </span>
                 ) : (
-                  <span className="flex items-center justify-center gap-2">
+                  <span className="flex items-center gap-2">
                     <CheckCircle className="w-3 h-3" />
                     Mark as Completed
                   </span>
@@ -189,21 +203,19 @@ const enrollCourse = courseInfo?.enrollCourse;
               </Button>
             ) : (
               <Button
-                className={
-                  "bg-green-600 hover:bg-green-700 w-full sm:w-auto min-w-40"
-                }
                 onClick={markIncompleteChapter}
-                disabled={incompleting}
+                disabled={incompleting || completing || !localIsCompleted}
+                className="bg-green-600 hover:bg-green-700 w-full sm:w-auto min-w-40"
                 size="sm"
               >
                 {incompleting ? (
-                  <span className="flex items-center justify-center gap-2">
+                  <span className="flex items-center gap-2">
                     <Loader2 className="w-3 h-3 animate-spin" />
                     Marking...
                   </span>
                 ) : (
-                  <span className="flex items-center justify-center gap-2">
-                    <CrossIcon className="mr-2 w-3 h-3" />
+                  <span className="flex items-center gap-2">
+                    <CrossIcon className="w-3 h-3" />
                     Mark as Incomplete
                   </span>
                 )}
@@ -290,6 +302,45 @@ const enrollCourse = courseInfo?.enrollCourse;
             </div>
           ))}
         </div>
+      </div>
+      {/* 🔥 FULL COURSE PDF CONTENT (HIDDEN) */}
+      <div
+        id="full-course-pdf"
+        style={{
+          position: "absolute",
+          left: "-9999px",
+          width: "800px",
+        }}
+      >
+        {/* Optional: Course Title */}
+        <h1
+          style={{
+            textAlign: "center",
+            fontSize: "28px",
+            marginBottom: "20px",
+          }}
+        >
+          {courseInfo?.courses?.courseName}
+        </h1>
+
+        {courseContent?.map((chap, cIndex) => (
+          <div
+            key={cIndex}
+            style={{ marginBottom: "40px", pageBreakAfter: "always" }}
+          >
+            {/* Chapter Title */}
+            <h2 style={{ fontSize: "22px", marginBottom: "10px" }}>
+              {chap?.courseData?.chapterName}
+            </h2>
+
+            {/* Topics */}
+            {chap?.courseData?.topics?.map((topic, tIndex) => (
+              <div key={tIndex} style={{ marginBottom: "15px" }}>
+                <div dangerouslySetInnerHTML={{ __html: topic?.content }} />
+              </div>
+            ))}
+          </div>
+        ))}
       </div>
     </div>
   );

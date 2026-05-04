@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -13,6 +13,9 @@ import {
 } from "@/components/ui/sidebar";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import {toast} from "sonner";
+import axios from "axios";
+import { useRouter } from "next/navigation";
 import {
   AlbumIcon,
   DraftingCompass,
@@ -54,6 +57,22 @@ const SideBarOptions = [
 
 function AppSidebar() {
   const path = usePathname();
+  const [openDialog, setOpenDialog] = useState(false);
+  const router = useRouter();
+  const handleCreateClick = async () => {
+    try {
+      const res = await axios.get("/api/check-course-limit");
+
+      if (res.data.allowed) {
+        setOpenDialog(true);
+      } else {
+        toast.warning("Free users can only create one course.");
+        router.push("/workspace/billing");
+      }
+    } catch (err) {
+      toast.error("Failed to check access");
+    }
+  };
 
   return (
     <Sidebar>
@@ -69,9 +88,17 @@ function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <AddNewCourseDialogue>
-            <Button className="w-full text-sm sm:text-base">
+            {/* <Button className="w-full text-sm sm:text-base">
               Create New Course
-            </Button>
+            </Button> */}
+            <AddNewCourseDialogue open={openDialog} setOpen={setOpenDialog}>
+              <Button
+                onClick={handleCreateClick}
+                className="w-full text-sm sm:text-base"
+              >
+                Create New Course
+              </Button>
+            </AddNewCourseDialogue>
           </AddNewCourseDialogue>
         </SidebarGroup>
         <SidebarGroup>

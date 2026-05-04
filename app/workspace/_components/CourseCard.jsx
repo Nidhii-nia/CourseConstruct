@@ -136,7 +136,7 @@ function CourseCard({ course, enrolledCourseList = [], showDelete = false }) {
 
       setLocalEnrolled(true);
 
-      toast.success("🎉 Successfully Enrolled!");
+      toast.success("Successfully Enrolled!");
 
       queryClient.invalidateQueries({ queryKey: ["enrolledCourses"] });
     } catch (e) {
@@ -191,7 +191,7 @@ function CourseCard({ course, enrolledCourseList = [], showDelete = false }) {
         </div>
       )}
       {/* PUBLISH BUTTON */}
-      {showDelete && !isDeleted && !isPublished && (
+      {showDelete && !isDeleted && !isPublished && actualCourse?.hasContent && (
         <div className="absolute top-2 left-2 z-10">
           <button
             onClick={handlePublishCourse}

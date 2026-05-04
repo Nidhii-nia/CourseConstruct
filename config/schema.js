@@ -18,6 +18,7 @@ export const usersTable = pgTable(
     name: varchar({ length: 255 }).notNull(),
     email: varchar({ length: 255 }).notNull().unique(),
     subscriptionId: varchar(),
+    createdAt: timestamp().defaultNow(),
   },
   (table) => ({
     emailIndex: index("users_email_idx").on(table.email),
@@ -42,6 +43,7 @@ export const coursesTable = pgTable("courses", {
   hasContent: boolean().default(false),
   isDeleted: boolean().default(false),
   isPublished: boolean().default(false),
+  createdAt: timestamp().defaultNow(),
 
   useremail: varchar({ length: 255 })
     .notNull()
@@ -67,6 +69,7 @@ export const enrollCourseTable = pgTable(
       .notNull(),
 
     completedChapters: json(),
+    createdAt: timestamp().defaultNow(),
   },
   (table) => ({
     enrollUserCidIdx: index("enroll_user_cid_idx").on(
@@ -153,5 +156,34 @@ export const quizStatsTable = pgTable(
   },
   (table) => ({
     quizStatsIdx: index("quiz_stats_quiz_idx").on(table.quizId),
+  })
+);
+
+/* =========================
+   COURSE FEEDBACK TABLE
+========================= */
+export const courseFeedbackTable = pgTable(
+  "courseFeedback",
+  {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+
+    cid: varchar({ length: 255 })
+      .references(() => coursesTable.cid)
+      .notNull(),
+
+    useremail: varchar({ length: 255 })
+      .references(() => usersTable.email)
+      .notNull(),
+
+    rating: integer().notNull(), // 1–5
+    feedback: varchar({ length: 1000 }),
+
+    createdAt: timestamp().defaultNow(),
+  },
+  (table) => ({
+    feedbackIdx: index("feedback_user_course_idx").on(
+      table.useremail,
+      table.cid
+    ),
   })
 );

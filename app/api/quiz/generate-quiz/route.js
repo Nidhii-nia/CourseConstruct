@@ -1,12 +1,19 @@
-import { db } from "@/configs/db";
+import { db } from "../../../../config/db";
 import {
   quizTable,
   coursesTable,
   enrollCourseTable,
-} from "@/configs/schema";
+} from "../../../../config/schema";
 import { eq, and } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import axios from "axios";
+import { Groq } from "groq-sdk";
+
+/* =========================
+   INIT GROQ
+========================= */
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
+});
 
 export async function POST(req) {
   try {
@@ -61,10 +68,29 @@ export async function POST(req) {
     /* =========================
        3. CHECK COMPLETION
     ========================= */
-    const totalChapters = courseData.courseContent?.length || 0;
-    const completed = enrollment.completedChapters?.length || 0;
 
-    if (totalChapters === 0 || completed !== totalChapters) {
+    const totalChapters = courseData.courseContent?.length || 0;
+
+    let completedArray = enrollment.completedChapters;
+
+    if (typeof completedArray === "string") {
+      try {
+        completedArray = JSON.parse(completedArray);
+      } catch {
+        completedArray = [];
+      }
+    }
+
+    if (!Array.isArray(completedArray)) {
+      completedArray = [];
+    }
+
+    const completed = completedArray.length;
+
+    if (
+      totalChapters === 0 ||
+      completed !== totalChapters
+    ) {
       return NextResponse.json(
         { error: "Complete the course first" },
         { status: 400 }
@@ -91,7 +117,7 @@ export async function POST(req) {
     ========================= */
     const trimmedContent = JSON.stringify(
       courseData.courseContent
-    ).slice(0, 15000); // token safety
+    ).slice(0, 15000);
 
     const prompt = `
 You are an expert educator.
@@ -122,27 +148,32 @@ ${trimmedContent}
 `;
 
     /* =========================
-       6. CALL QWEN MODEL
+       6. CALL GROQ MODEL
     ========================= */
-    const aiRes = await axios.post(
-      "https://api.siliconflow.cn/v1/chat/completions",
-      {
-        model: "Qwen/Qwen3-VL-32B-Instruct",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.7,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.SILICON_API_KEY}`,
-          "Content-Type": "application/json",
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "user",
+          content: prompt,
         },
-      }
-    );
+      ],
+      model: "openai/gpt-oss-120b",
+      temperature: 0.7,
+      max_completion_tokens: 2000,
+    });
 
-    let raw = aiRes.data.choices[0].message.content;
+    let raw =
+      chatCompletion.choices?.[0]?.message?.content || "";
+
+    if (!raw) {
+      return NextResponse.json(
+        { error: "AI failed to generate quiz" },
+        { status: 500 }
+      );
+    }
 
     /* =========================
-       7. CLEAN RESPONSE (VERY IMPORTANT)
+       7. CLEAN RESPONSE
     ========================= */
     raw = raw.replace(/```json|```/g, "").trim();
 
@@ -151,7 +182,8 @@ ${trimmedContent}
     try {
       parsed = JSON.parse(raw);
     } catch (err) {
-      console.error("❌ AI JSON Parse Error:", raw);
+      console.error("❌ JSON Parse Error:", raw);
+
       return NextResponse.json(
         { error: "Invalid AI response" },
         { status: 500 }
@@ -184,6 +216,7 @@ ${trimmedContent}
     });
   } catch (err) {
     console.error("🔥 Generate Quiz Error:", err);
+
     return NextResponse.json(
       { error: "Server error" },
       { status: 500 }

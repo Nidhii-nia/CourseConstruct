@@ -10,6 +10,7 @@ export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
     const courseId = searchParams.get("courseId");
+    const showDeleted = searchParams.get("showDeleted") === "true";
     let user = null;
 
     try {
@@ -65,7 +66,7 @@ export async function GET(req) {
         .limit(1);
     }
 
-    // 🔹 CASE 3: Fetch user courses (ONLY CHANGE HERE ✅)
+    // 🔹 CASE 3: Fetch user courses (with showDeleted support)
     else {
       const email = user?.primaryEmailAddress?.emailAddress;
 
@@ -76,27 +77,47 @@ export async function GET(req) {
         );
       }
 
-      const data = await db.execute(sql`
-        SELECT 
-          c."cid",
-          c."name",
-          c."bannerImgUrl",
-          c."noOfChapters",
-          c."hasContent",
-          c."isDeleted",
-          c."isPublished",
+      // Build query based on showDeleted parameter
+      if (showDeleted) {
+        // Include both deleted and active courses
+        const data = await db.execute(sql`
+          SELECT 
+            c."cid",
+            c."name",
+            c."bannerImgUrl",
+            c."noOfChapters",
+            c."hasContent",
+            c."isDeleted",
+            c."isPublished",
+            c."courseJson"->'course'->>'description' AS description
 
-          -- ✅ ONLY CHANGE: extract description from JSON
-          c."courseJson"->'course'->>'description' AS description
+          FROM ${coursesTable} c
+          WHERE c."useremail" = ${email}
+          ORDER BY c."id" DESC
+          LIMIT 20
+        `);
+        result = data.rows;
+      } else {
+        // Only active courses
+        const data = await db.execute(sql`
+          SELECT 
+            c."cid",
+            c."name",
+            c."bannerImgUrl",
+            c."noOfChapters",
+            c."hasContent",
+            c."isDeleted",
+            c."isPublished",
+            c."courseJson"->'course'->>'description' AS description
 
-        FROM ${coursesTable} c
-        WHERE c."useremail" = ${email}
-        AND c."isDeleted" = false
-        ORDER BY c."id" DESC
-        LIMIT 20
-      `);
-
-      result = data.rows;
+          FROM ${coursesTable} c
+          WHERE c."useremail" = ${email}
+          AND c."isDeleted" = false
+          ORDER BY c."id" DESC
+          LIMIT 20
+        `);
+        result = data.rows;
+      }
     }
 
     return NextResponse.json({

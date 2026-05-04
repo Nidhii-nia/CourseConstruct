@@ -26,8 +26,11 @@ export async function DELETE(req) {
       );
     }
 
-    // Safely extract user email
-    const userEmail = user.primaryEmailAddress?.emailAddress;
+    // Safely extract user email (support Clerk primaryEmailAddress or emailAddresses)
+    const userEmail =
+      user.primaryEmailAddress?.emailAddress ||
+      user.emailAddresses?.[0]?.emailAddress;
+
     if (!userEmail) {
       return NextResponse.json(
         { error: "User email not found" },

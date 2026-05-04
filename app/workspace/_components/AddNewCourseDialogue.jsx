@@ -26,13 +26,10 @@ import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { startLoading, stopLoading } from "@/app/components/RouteLoaderInner";
-import { useQueryClient } from "@tanstack/react-query";
 
-function AddNewCourseDialogue({ children }) {
+function AddNewCourseDialogue({ children, open, setOpen }) {
   const [isLoading, setIsLoading] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -114,40 +111,27 @@ function AddNewCourseDialogue({ children }) {
         },
       );
 
-      if (result?.status === 200 && result?.data?.cid) {
-        toast.success("🎉 Course Layout generated successfully!");
+      if (result?.data?.layouts) {
+        sessionStorage.setItem(
+          "courseLayouts",
+          JSON.stringify(result.data.layouts),
+        );
 
-        // ✅ Instant UI update (NO DB call)
-        queryClient.setQueryData(["courses", "dashboard"], (old = []) => [
-          {
-            cid: result.data.cid,
-            name: formData.name,
-            description: formData.description,
-            noOfChapters: Number(formData.noOfChapters),
-            includeVideo: formData.includeVideo,
-            level: formData.level,
-            category: formData.category,
-            hasContent: false,
-            isDeleted: false,
-            bannerImgUrl: "",
-          },
-          ...old,
-        ]);
+        sessionStorage.setItem("courseFormData", JSON.stringify(formData));
 
-        if (mounted) {
-          setIsOpen(false);
-          resetForm();
-        }
+        toast.success("Layouts generated successfully!");
 
-        router.push(`/workspace/edit-course/${result.data.cid}`);
+        setOpen(false);
+        router.push("/workspace/layout-selection");
+        return;
       } else {
         toast.error(
           result?.data?.error ||
-            "⚠️ Failed to generate course please try later.",
+            "Failed to generate course please try later.",
         );
       }
     } catch (error) {
-      console.error("❌ Error generating course:", error);
+      console.error("Error generating course:", error);
 
       if (error.response?.status === 401) {
         toast.error("Please sign in to create a course");
@@ -178,13 +162,6 @@ function AddNewCourseDialogue({ children }) {
     }
   };
 
-  const handleOpenChange = (open) => {
-    setIsOpen(open);
-    if (!open && !isLoading) {
-      resetForm();
-    }
-  };
-
   // Prevent server-side rendering of the Dialog to avoid hydration mismatch
   if (!mounted) {
     // Return a placeholder with same dimensions to avoid layout shift
@@ -192,7 +169,7 @@ function AddNewCourseDialogue({ children }) {
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-125 md:max-w-137.5 max-h-[85vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
@@ -326,7 +303,7 @@ function AddNewCourseDialogue({ children }) {
           <Button
             type="button"
             variant="outline"
-            onClick={() => setIsOpen(false)}
+            onClick={() => setOpen(false)}
             disabled={isLoading}
             className="w-full sm:w-auto"
           >
