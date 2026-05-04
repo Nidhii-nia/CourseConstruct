@@ -1,39 +1,164 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# 🎓 CourseConstruct:AI based Course Generator SaaS
 
-## Getting Started
+An AI-powered learning platform that allows users to generate structured courses, track progress, and manage content through a modern dashboard. Built with a scalable architecture and real-time analytics.
 
-First, run the development server:
+## 🚀 Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+### 👤 User Features
+
+* 🔐 Authentication with Clerk
+* 📚 AI-generated courses using Groq (LLM)
+* 🎥 Optional video-based learning content
+* 📊 Track course progress
+* ⭐ Submit feedback and ratings
+* 🔄 Regenerate course content
+
+### 🛠️ Admin Features
+
+* 📊 Analytics dashboard (users, courses, engagement)
+* 👥 User management
+* 📦 Course management (publish/draft/delete)
+* 💬 Feedback monitoring system
+* 🔐 Role-based access (Admin only)
+
+### ⚡ AI Features
+
+* 🧠 Course generation via Groq API
+* 🧩 Structured JSON output (chapters, topics, duration)
+* 🎨 AI banner prompt generation
+
+## 🏗️ Tech Stack
+
+### Frontend
+
+* Next.js 15 (App Router)
+* React
+* Tailwind CSS
+* ShadCN UI
+
+### Backend
+
+* Next.js API Routes
+* Drizzle ORM
+* PostgreSQL
+
+### Authentication
+
+* Clerk (Auth + Billing)
+
+### AI Integration
+
+* Groq API (LLM)
+
+### State & Data
+
+* React Query (TanStack)
+* Axios
+## 📂 Project Structure
+
+```
+/app
+  /workspace          → User dashboard
+  /admin              → Admin panel
+    /dashboard
+    /users
+    /courses
+    /analytics
+  /api
+    /courses
+    /admin-analytics
+    /admin-reports
+    /generate-course
+
+/config
+  db.js               → Database config
+  schema.js           → Drizzle schema
+
+/components
+  ui/                 → Reusable UI components
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🔐 Authentication & Roles
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+* Uses Clerk for authentication
+* Admin access restricted via:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+  ```
+  /app/admin/layout.js
+  ```
+* Only authorized emails can access admin dashboard
 
-## Learn More
+## ⚙️ Environment Variables
 
-To learn more about Next.js, take a look at the following resources:
+Create a `.env.local` file:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```env
+DATABASE_URL=your_database_url
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_key
+CLERK_SECRET_KEY=your_secret
+GROQ_API_KEY=your_groq_key
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🧠 How It Works
 
-## Deploy on Vercel
+1. User creates a course
+2. AI generates structured content
+3. User can:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   * View course
+   * Regenerate content
+4. Admin monitors:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+   * Usage
+   * Engagement
+   * Feedback
 
 
+## 📊 Analytics
 
+* Total users
+* Total courses
+* Published vs draft
+* Enrollments
+* Top performing courses
+* Recent users
+
+
+## 🧪 Installation
+
+```bash
+git clone https://github.com/your-username/your-repo.git
+
+cd your-repo
+
+npm install
+
+npm run dev
+```
+
+## 🌐 Deployment
+
+Recommended:
+
+* Vercel (Frontend + API)
+* Neon / Supabase (PostgreSQL)
+
+## 🤝 Contributing
+
+Pull requests are welcome. For major changes, open an issue first.
+
+## 📄 License
+
+MIT License
+
+## 💡 Author
+
+Built by **NIDHI KUMARI**
+
+## ⭐ Support
+
+If you like this project:
+
+* Star ⭐ the repo
+* Share with others
+* Contribute 🚀
