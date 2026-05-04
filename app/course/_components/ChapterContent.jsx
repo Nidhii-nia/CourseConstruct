@@ -59,10 +59,10 @@ const markChapterCompleted = async () => {
   );
 
   try {
-    // ✅ INSTANT UI UPDATE
+    // INSTANT UI UPDATE
     setLocalIsCompleted(true);
 
-    // ✅ INSTANT SIDEBAR UPDATE
+    // INSTANT SIDEBAR UPDATE
     if (refreshData) {
       refreshData({
         ...courseInfo,
@@ -73,7 +73,7 @@ const markChapterCompleted = async () => {
       });
     }
 
-    // ✅ API CALL (background)
+    // API CALL (background)
     await axios.put("/api/enroll-course", {
       courseId,
       completedChapters: updatedChapters,
@@ -114,10 +114,10 @@ const markIncompleteChapter = async () => {
   );
 
   try {
-    // ✅ INSTANT UI UPDATE
+    // INSTANT UI UPDATE
     setLocalIsCompleted(false);
 
-    // ✅ INSTANT SIDEBAR UPDATE
+    // INSTANT SIDEBAR UPDATE
     if (refreshData) {
       refreshData({
         ...courseInfo,
@@ -128,7 +128,7 @@ const markIncompleteChapter = async () => {
       });
     }
 
-    // ✅ API CALL
+    // API CALL
     await axios.put("/api/enroll-course", {
       courseId,
       completedChapters: updatedChapters,

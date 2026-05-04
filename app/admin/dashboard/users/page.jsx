@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [loadingUser, setLoadingUser] = useState(null); // ✅ NEW
+  const [loadingUser, setLoadingUser] = useState(null); // NEW
   const router = useRouter();
 
   const fetchUsers = async () => {
@@ -26,7 +26,7 @@ export default function UsersPage() {
     fetchUsers();
   }, []);
 
-  // ✅ HANDLE VIEW WITH LOADING
+  // HANDLE VIEW WITH LOADING
   const handleView = (id) => {
     setLoadingUser(id);
 

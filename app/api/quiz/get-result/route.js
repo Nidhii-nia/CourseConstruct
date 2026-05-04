@@ -60,15 +60,15 @@ export async function GET(req) {
        3. ANALYTICS
     ========================= */
 
-    // ✅ BEST SCORE (safe)
+    // BEST SCORE (safe)
     const bestAttempt = attempts.reduce((best, curr) =>
       curr.percentage > best.percentage ? curr : best
     );
 
-    // ✅ FIRST ATTEMPT
+    // FIRST ATTEMPT
     const firstAttempt = attempts[attempts.length - 1];
 
-    // ✅ IMPROVEMENT
+    // IMPROVEMENT
     const improvement =
       attempts.length > 1
         ? bestAttempt.percentage - firstAttempt.percentage
@@ -102,7 +102,7 @@ export async function GET(req) {
 
     const userBest = bestAttempt.percentage;
 
-    // ✅ FIXED RANK (handles duplicates correctly)
+    // FIXED RANK (handles duplicates correctly)
     const rank =
       sortedScores.filter((score) => score > userBest).length + 1;
 

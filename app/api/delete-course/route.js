@@ -6,7 +6,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 
 export async function DELETE(req) {
   try {
-    // ✅ AUTH CHECK
+    // AUTH CHECK
     const { userId } = await auth();
     const user = await currentUser();
 
@@ -38,7 +38,7 @@ export async function DELETE(req) {
       );
     }
 
-    // ✅ Only delete own course
+    // Only delete own course
     const result = await db
       .update(coursesTable)
       .set({ isDeleted: true })

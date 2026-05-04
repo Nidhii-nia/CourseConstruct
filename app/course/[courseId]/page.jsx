@@ -17,7 +17,7 @@ function Course() {
   const topicRefs = useRef([]);
   const isFetchingRef = useRef(false);
 
-  // ✅ Fetch course data safely
+  // Fetch course data safely
   useEffect(() => {
     const fetchData = async () => {
       if (!courseId || isFetchingRef.current) return;
@@ -34,7 +34,7 @@ function Course() {
 setCourseInfo({
   ...res.data,
 
-  // ✅ FIXED STRUCTURE
+  // FIXED STRUCTURE
   courses: {
     courseContent: res.data.courseContent,
     includeVideo: res.data.includeVideo,
@@ -53,7 +53,7 @@ setCourseInfo({
     fetchData();
   }, [courseId]);
 
-  // ✅ Refresh function (used by child)
+  // Refresh function (used by child)
   const refreshData = (optimisticData) => {
     if (optimisticData) {
       setCourseInfo(optimisticData);
@@ -96,7 +96,7 @@ setCourseInfo({
           </div>
         )}
 
-        {/* ✅ MAIN CONTENT */}
+        {/* MAIN CONTENT */}
         {courseInfo && (
           <>
             {/* ⚠️ Error Banner */}

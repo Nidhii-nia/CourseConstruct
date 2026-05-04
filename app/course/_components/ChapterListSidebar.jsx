@@ -146,7 +146,7 @@ useEffect(() => {
 
     printWindow.focus();
 
-    // ✅ trigger print → user can save as PDF
+    // trigger print → user can save as PDF
     printWindow.print();
   };
 
@@ -163,7 +163,7 @@ useEffect(() => {
     }
 
     try {
-      setStartingQuiz(true); // ✅ show loader
+      setStartingQuiz(true); // show loader
 
       const res = await axios.post("/api/quiz/generate-quiz", {
         cid,

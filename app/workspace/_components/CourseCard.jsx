@@ -36,14 +36,14 @@ function CourseCard({ course, enrolledCourseList = [], showDelete = false }) {
 
   const isDeleted = actualCourse?.isDeleted === true;
 
-  // ✅ check enrollment properly
+  // check enrollment properly
   const isEnrolled = enrolledCourseList?.some(
     (item) =>
       item?.cid === actualCourse?.cid ||
       item?.courses?.cid === actualCourse?.cid,
   );
 
-  // ✅ sync local state with backend
+  // sync local state with backend
   useEffect(() => {
     setLocalEnrolled(!!isEnrolled);
   }, [isEnrolled]);
@@ -148,7 +148,7 @@ function CourseCard({ course, enrolledCourseList = [], showDelete = false }) {
 
   return (
     <div className="relative group shadow-lg rounded-xl bg-emerald-950 border border-emerald-700/30 max-w-xs">
-      {/* ✅ Published Badge */}
+      {/* Published Badge */}
       {isPublished && (
         <div className="absolute top-2 left-2 z-10 px-3 py-1 text-xs rounded-full bg-green-700 text-white flex items-center gap-1">
           Published
@@ -225,7 +225,7 @@ function CourseCard({ course, enrolledCourseList = [], showDelete = false }) {
             <Book size={16} /> {actualCourse?.noOfChapters || 0} Chapters
           </span>
 
-          {/* ✅ BUTTON LOGIC */}
+          {/* BUTTON LOGIC */}
           {isDeleted ? (
             <span className="text-red-400 text-sm font-semibold">
               🚫 Unavailable

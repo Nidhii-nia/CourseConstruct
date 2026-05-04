@@ -64,7 +64,7 @@ export async function PUT(req) {
       );
     }
 
-    // ✅ Bulk update support (after authorization)
+    // Bulk update support (after authorization)
     if (body.updatedCourseJson) {
       await db.update(coursesTable)
         .set({ courseJson: body.updatedCourseJson })

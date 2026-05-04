@@ -61,7 +61,7 @@ export async function GET() {
         createdAt: coursesTable.createdAt,
       })
       .from(coursesTable)
-      .orderBy(desc(coursesTable.createdAt)) // ✅ FIX
+      .orderBy(desc(coursesTable.createdAt)) // FIX
       .limit(5);
 
     const recentQuizRaw = await db
@@ -70,7 +70,7 @@ export async function GET() {
         createdAt: quizAttemptTable.createdAt,
       })
       .from(quizAttemptTable)
-      .orderBy(desc(quizAttemptTable.createdAt)) // ✅ FIX
+      .orderBy(desc(quizAttemptTable.createdAt)) // FIX
       .limit(5);
 
     const recentEnrollRaw = await db
@@ -80,7 +80,7 @@ export async function GET() {
         createdAt: enrollCourseTable.createdAt,
       })
       .from(enrollCourseTable)
-      .orderBy(desc(enrollCourseTable.createdAt)) // ✅ FIX
+      .orderBy(desc(enrollCourseTable.createdAt)) // FIX
       .limit(5);
 
     const recentFeedbackRaw = await db
@@ -90,7 +90,7 @@ export async function GET() {
         createdAt: courseFeedbackTable.createdAt,
       })
       .from(courseFeedbackTable)
-      .orderBy(desc(courseFeedbackTable.createdAt)) // ✅ FIX
+      .orderBy(desc(courseFeedbackTable.createdAt)) // FIX
       .limit(5);
 
     // ---- ADD TYPE (NO SQL) ----

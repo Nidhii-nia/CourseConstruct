@@ -24,7 +24,7 @@ export async function GET() {
       );
     }
 
-    // ✅ OPTIMIZED QUERY (no heavy fields)
+    // OPTIMIZED QUERY (no heavy fields)
 const courses = await db.execute(sql`
   SELECT 
     c."cid",

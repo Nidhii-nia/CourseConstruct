@@ -13,7 +13,7 @@ import { useEffect, useState } from "react";
 function CourseList() {
   const { user } = useUser();
 
-  // ✅ FIX: hydration safety
+  // FIX: hydration safety
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -33,7 +33,7 @@ function CourseList() {
       const res = await axios.get("/api/courses");
       return res.data.courses || [];
     },
-    enabled: mounted && !!user, // ✅ FIXED
+    enabled: mounted && !!user, // FIXED
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
   });
@@ -49,12 +49,12 @@ function CourseList() {
       const res = await axios.get("/api/enroll-course");
       return res.data || [];
     },
-    enabled: mounted && !!user, // ✅ FIXED
+    enabled: mounted && !!user, // FIXED
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
   });
 
-  // ✅ FIX: prevent SSR mismatch
+  // FIX: prevent SSR mismatch
   if (!mounted) return null;
 
   if (isLoading) {
@@ -85,7 +85,7 @@ function CourseList() {
 
   return (
     <div>
-      {/* ✅ Header with Refresh */}
+      {/* Header with Refresh */}
       <div className="flex items-center justify-between mt-5 mb-4">
         <h2 className="text-2xl font-bold text-emerald-950">
           Course List

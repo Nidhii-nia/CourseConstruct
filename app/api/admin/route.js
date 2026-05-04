@@ -8,7 +8,7 @@ export async function GET() {
     return NextResponse.json({ error: "Not logged in" });
   }
 
-  // ✅ NEW WAY (IMPORTANT)
+  // NEW WAY (IMPORTANT)
   const client = await clerkClient();
 
   await client.users.updateUser(userId, {

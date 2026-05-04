@@ -135,7 +135,7 @@ export default function CoursesPage() {
               <div className="flex justify-between mt-4 text-sm">
                 <button
                   onClick={(e) => {
-                    e.stopPropagation(); // ✅ FIX
+                    e.stopPropagation(); // FIX
                     handleView(course.cid);
                   }}
                   disabled={loadingCourse === course.cid}

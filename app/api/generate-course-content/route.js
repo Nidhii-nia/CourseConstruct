@@ -61,7 +61,7 @@ function safeJsonParse(text) {
   }
 }
 
-// ✅ NEW: Extract JSON safely
+// NEW: Extract JSON safely
 function extractJson(text) {
   try {
     const match = text.match(/\{[\s\S]*\}/);
@@ -79,7 +79,7 @@ async function generateWithRetry(messages, retries = 2) {
       messages,
       model: "openai/gpt-oss-120b",
       temperature: 1,
-      max_completion_tokens: 7000, // ✅ increased slightly
+      max_completion_tokens: 7000, // increased slightly
       top_p: 1,
     });
   } catch (error) {
@@ -133,7 +133,7 @@ export async function POST(req) {
               PROMPT +
               JSON.stringify({
                 chapterName: chapter.chapterName,
-                topics: chapter.topics.slice(0, 3), // ✅ LIMIT FIX
+                topics: chapter.topics.slice(0, 3), // LIMIT FIX
               }),
           },
         ];
@@ -145,10 +145,10 @@ export async function POST(req) {
 
         console.log("RAW AI OUTPUT:", raw);
 
-        // ✅ SAFE PARSE
+        // SAFE PARSE
         let parsed = extractJson(raw);
 
-        // ✅ NO THROW — SAFE FALLBACK
+        // NO THROW — SAFE FALLBACK
         if (!parsed || !parsed.topics) {
           console.warn("Invalid AI response, using fallback");
 

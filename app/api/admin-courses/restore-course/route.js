@@ -6,7 +6,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 
 export async function POST(req) {
   try {
-    // ✅ AUTH CHECK
+    // AUTH CHECK
     const { userId } = await auth();
     const user = await currentUser();
 
@@ -38,7 +38,7 @@ export async function POST(req) {
       );
     }
 
-    // ✅ Only restore own course
+    // Only restore own course
     const result = await db
       .update(coursesTable)
       .set({ isDeleted: false })

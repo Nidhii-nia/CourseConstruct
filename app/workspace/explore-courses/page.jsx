@@ -47,7 +47,7 @@ function ExploreCourses() {
     enabled: !!user,
   });
 
-  // ✅ Debounce (fixed)
+  // Debounce (fixed)
   const handleSearchChange = useMemo(
     () =>
       debounce((value) => {
@@ -78,7 +78,7 @@ function ExploreCourses() {
     const filteredCourses = useMemo(() => {
     let list = courseList;
 
-    // ✅ Ensure only published (safety layer)
+    // Ensure only published (safety layer)
     list = list.filter((course) => course?.isPublished);
 
     // Search filter
@@ -99,7 +99,7 @@ function ExploreCourses() {
     });
   }, [courseList, searchQuery, enrolledCourseList]);
 
-  // ✅ Loading - check both queries
+  // Loading - check both queries
   if (isLoading || enrolledIsLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
@@ -111,7 +111,7 @@ function ExploreCourses() {
     );
   }
 
-  // ✅ Error - check both queries
+  // Error - check both queries
   if (error || enrolledError) {
     return (
       <div className="text-red-500 mt-5">

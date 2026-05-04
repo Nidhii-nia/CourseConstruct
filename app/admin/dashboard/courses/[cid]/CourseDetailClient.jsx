@@ -133,7 +133,7 @@ export default function CourseDetailClient({ course, cid }) {
           </p>
         </div>
 
-        {/* ✅ FIXED BUTTON LAYER */}
+        {/* FIXED BUTTON LAYER */}
         <div className="flex gap-3 relative z-10">
           {!course.isDeleted && (
             <button
@@ -228,7 +228,7 @@ export default function CourseDetailClient({ course, cid }) {
           )}
         </div>
 
-        {/* ✅ FIXED IMAGE CLICK BLOCK */}
+        {/* FIXED IMAGE CLICK BLOCK */}
         {course.bannerImgUrl && (
           <div className="w-full max-w-65 lg:max-w-[320px]">
             <img

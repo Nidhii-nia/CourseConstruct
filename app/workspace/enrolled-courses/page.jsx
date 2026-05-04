@@ -11,23 +11,23 @@ import { toast } from "sonner";
 function EnrolledCourses() {
   const { isLoaded, user } = useUser();
 
-  // ✅ NEW: get user email
+  // NEW: get user email
   const userEmail = user?.primaryEmailAddress?.emailAddress;
 
   const { data, isLoading, refetch, isFetching } = useQuery({
-    // ✅ FIXED: dynamic query key
+    // FIXED: dynamic query key
     queryKey: ["enrolledCourses", userEmail],
     queryFn: async () => {
       const res = await axios.get("/api/enroll-course");
       return res.data || [];
     },
-    // ✅ FIXED: better enabled condition
+    // FIXED: better enabled condition
     enabled: isLoaded && !!userEmail,
   });
 
   console.log("API DATA ENROLLED cOURSES:", data);
 
-  // ✅ NEW: local state for instant UI updates
+  // NEW: local state for instant UI updates
   const [localCourses, setLocalCourses] = useState([]);
 
   useEffect(() => {
@@ -40,7 +40,7 @@ function EnrolledCourses() {
 
   const handleUnenroll = async (cid) => {
     try {
-      // ✅ FIXED: correct filtering path
+      // FIXED: correct filtering path
       setLocalCourses((prev) =>
         prev.filter((course) => course?.cid !== cid)
       );
@@ -104,7 +104,7 @@ function EnrolledCourses() {
         </button>
       </div>
 
-      {/* ✅ PASS HANDLER */}
+      {/* PASS HANDLER */}
       <EnrollCourseList
         enrolledCourseList={enrolledCourses}
         isLoading={isLoading}

@@ -9,27 +9,33 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    // 📅 7 DAYS AGO
+    // 7 DAYS AGO
     const lastWeek = new Date();
     lastWeek.setDate(lastWeek.getDate() - 7);
 
-    // 📊 TOTAL USERS
+    // TOTAL USERS
     const totalUsers = await db
       .select({ count: count() })
       .from(usersTable)
-      .then((res) => res[0]?.count || 0);
+      .then((res) => Number(res[0]?.count) || 0);
 
-    // 🆕 USERS THIS WEEK
-    const usersThisWeek = await db
-      .select({ count: count() })
-      .from(usersTable)
-      .where(gt(usersTable.createdAt, lastWeek))
-      .then((res) => res[0]?.count || 0);
+    // USERS THIS WEEK (SAFE)
+    let usersThisWeek = 0;
+    try {
+      usersThisWeek = await db
+        .select({ count: count() })
+        .from(usersTable)
+        .where(gt(usersTable.createdAt, lastWeek))
+        .then((res) => Number(res[0]?.count) || 0);
+    } catch (err) {
+      console.warn("usersThisWeek failed, fallback to 0");
+      usersThisWeek = 0;
+    }
 
-    // 📉 USERS BEFORE THIS WEEK
+    // USERS BEFORE THIS WEEK
     const usersBefore = totalUsers - usersThisWeek;
 
-    // 📈 TREND %
+    // TREND %
     const usersTrend =
       usersBefore > 0
         ? Math.round((usersThisWeek / usersBefore) * 100)
@@ -37,39 +43,40 @@ export async function GET() {
         ? 100
         : 0;
 
-    // 📊 TOTAL COURSES
+    // TOTAL COURSES
     const totalCourses = await db
       .select({ count: count() })
       .from(coursesTable)
       .where(eq(coursesTable.isDeleted, false))
-      .then((res) => res[0]?.count || 0);
+      .then((res) => Number(res[0]?.count) || 0);
 
-    // 📊 PUBLISHED COURSES
+    // PUBLISHED COURSES
     const publishedCourses = await db
       .select({ count: count() })
       .from(coursesTable)
       .where(eq(coursesTable.isPublished, true))
-      .then((res) => res[0]?.count || 0);
+      .then((res) => Number(res[0]?.count) || 0);
 
-    // 📊 DRAFT COURSES
+    // DRAFT COURSES
     const draftCourses = await db
       .select({ count: count() })
       .from(coursesTable)
       .where(eq(coursesTable.isPublished, false))
-      .then((res) => res[0]?.count || 0);
+      .then((res) => Number(res[0]?.count) || 0);
 
-    // 📊 TOTAL ENROLLMENTS
+    // TOTAL ENROLLMENTS
     const totalEnrollments = await db
       .select({ count: count() })
       .from(enrollCourseTable)
-      .then((res) => res[0]?.count || 0);
+      .then((res) => Number(res[0]?.count) || 0);
 
-    // 🔥 TOP COURSES
+    const enrollCount = count(enrollCourseTable.id);
+
     const topCourses = await db
       .select({
         cid: coursesTable.cid,
         name: coursesTable.name,
-        enrollments: count(enrollCourseTable.id),
+        enrollments: enrollCount,
       })
       .from(coursesTable)
       .leftJoin(
@@ -77,11 +84,11 @@ export async function GET() {
         eq(coursesTable.cid, enrollCourseTable.cid)
       )
       .where(eq(coursesTable.isDeleted, false))
-      .groupBy(coursesTable.cid)
-      .orderBy(desc(count(enrollCourseTable.id)))
+      .groupBy(coursesTable.cid, coursesTable.name)
+      .orderBy(desc(enrollCount))
       .limit(5);
 
-    // 🆕 RECENT USERS
+    // RECENT USERS
     const recentUsers = await db
       .select({
         id: usersTable.id,
@@ -95,19 +102,19 @@ export async function GET() {
 
     return NextResponse.json({
       totalUsers,
-      usersTrend, // ✅ REAL TREND ADDED
+      usersTrend,
       totalCourses,
       publishedCourses,
       draftCourses,
       totalEnrollments,
-      topCourses,
+      topCourses: topCourses || [],
       recentUsers: recentUsers || [],
     });
   } catch (err) {
-    console.error("Analytics Error:", err);
+    console.error("Analytics Error FULL:", err);
 
     return NextResponse.json(
-      { error: "Failed to fetch analytics" },
+      { error: err.message || "Failed to fetch analytics" },
       { status: 500 }
     );
   }

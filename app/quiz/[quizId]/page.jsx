@@ -32,7 +32,7 @@ function QuizPage() {
 
         setQuiz(quizData.quizJson);
 
-        // ✅ ALWAYS SAFE
+        // ALWAYS SAFE
         setCid(res.data.cid || quizData.cid);
       } catch (err) {
         console.error(err);

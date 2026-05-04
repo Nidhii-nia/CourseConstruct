@@ -25,7 +25,7 @@ export async function POST(req) {
   const eventType = evt.type;
   const data = evt.data;
 
-  // ✅ SUBSCRIPTION CREATED / UPDATED
+  // SUBSCRIPTION CREATED / UPDATED
   if (
     eventType === "subscription.created" ||
     eventType === "subscription.updated"

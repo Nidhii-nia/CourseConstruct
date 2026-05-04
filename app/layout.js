@@ -5,7 +5,7 @@ import { Toaster } from "sonner";
 import RouteLoader from "@/app/components/RouteLoader";
 import ReactQueryProvider from "./react-query-provider";
 
-// ✅ Use stable font instead of Geist
+// Use stable font instead of Geist
 import { Inter } from "next/font/google";
 
 const inter = Inter({

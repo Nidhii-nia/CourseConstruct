@@ -36,7 +36,7 @@ export default function AdminLayout({ children }) {
   const [loading, setLoading] = useState(false);
   const searchRef = useRef(null);
 
-  // ✅ Hydration fix
+  // Hydration fix
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {

@@ -90,7 +90,7 @@ export const quizTable = pgTable(
     cid: varchar({ length: 255 })
       .references(() => coursesTable.cid)
       .notNull()
-      .unique(), // ✅ prevents duplicate quizzes per course
+      .unique(), // prevents duplicate quizzes per course
 
     generatedBy: varchar({ length: 255 })
       .references(() => usersTable.email)
@@ -99,7 +99,7 @@ export const quizTable = pgTable(
     quizJson: json().notNull(),
     totalQuestions: integer().notNull(),
 
-    createdAt: timestamp().defaultNow(), // ✅ FIXED
+    createdAt: timestamp().defaultNow(), // FIXED
   },
   (table) => ({
     quizCidIdx: index("quiz_cid_idx").on(table.cid),
@@ -127,9 +127,9 @@ export const quizAttemptTable = pgTable(
     total: integer(),
     percentage: integer(),
 
-    attemptNumber: integer().default(1), // ✅ future analytics
+    attemptNumber: integer().default(1), // future analytics
 
-    createdAt: timestamp().defaultNow(), // ✅ FIXED
+    createdAt: timestamp().defaultNow(), // FIXED
   },
   (table) => ({
     quizUserIdx: index("quiz_attempt_user_idx").on(

@@ -39,7 +39,6 @@ export default clerkMiddleware(async (auth, req) => {
 
   // 🔒 Protect dashboard
   if (req.nextUrl.pathname.startsWith("/dashboard")) {
-    // ✅ NEW WAY
     const client = await clerkClient();
     const user = await client.users.getUser(userId);
 

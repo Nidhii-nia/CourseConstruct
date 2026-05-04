@@ -3,7 +3,7 @@ import { db } from "@/config/db";
 import { usersTable } from "@/config/schema";
 import { eq } from "drizzle-orm";
 
-// ✅ Handle POST (Create or Fetch User)
+// Handle POST (Create or Fetch User)
 export async function POST(req) {
   try {
     const body = await req.json();
@@ -25,7 +25,7 @@ export async function POST(req) {
       return NextResponse.json(result, { status: 200 });
     }
 
-    // ✅ Return existing user if found
+    // Return existing user if found
     return NextResponse.json(users[0], { status: 200 });
 
   } catch (error) {
@@ -34,7 +34,7 @@ export async function POST(req) {
   }
 }
 
-// ✅ Optional: Handle unsupported methods gracefully
+// Optional: Handle unsupported methods gracefully
 export function GET() {
   return NextResponse.json(
     { error: "Method not allowed" },

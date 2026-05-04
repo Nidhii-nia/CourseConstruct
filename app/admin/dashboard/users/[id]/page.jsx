@@ -27,7 +27,7 @@ export default async function UserDetail({ params }) {
       level: coursesTable.level,
       category: coursesTable.category,
       isPublished: coursesTable.isPublished,
-      isDeleted: coursesTable.isDeleted, // ✅ FIX ADDED
+      isDeleted: coursesTable.isDeleted, // FIX ADDED
     })
     .from(enrollCourseTable)
     .innerJoin(coursesTable, eq(enrollCourseTable.cid, coursesTable.cid))
@@ -91,7 +91,7 @@ export default async function UserDetail({ params }) {
                     <p className="font-medium text-sm">{c.name}</p>
 
                     {/* 🗑 DELETED BADGE */}
-                    {c.isDeleted === true && ( // ✅ STRICT CHECK
+                    {c.isDeleted === true && ( // STRICT CHECK
                       <span className="px-2 py-0.5 text-[10px] rounded bg-red-100 text-red-700 font-semibold">
                         Deleted
                       </span>
@@ -141,7 +141,7 @@ export default async function UserDetail({ params }) {
                     <p className="font-medium text-sm">{c.name}</p>
 
                     {/* 🗑 DELETED BADGE */}
-                    {c.isDeleted === true && ( // ✅ FIX NOW WORKS
+                    {c.isDeleted === true && ( // FIX NOW WORKS
                       <span className="px-2 py-0.5 text-[10px] rounded bg-red-100 text-red-700 font-semibold">
                         Deleted
                       </span>

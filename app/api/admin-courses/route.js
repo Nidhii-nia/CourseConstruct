@@ -14,9 +14,9 @@ export async function GET(req) {
   try {
     const conditions = [];
 
-    // ✅ Always push conditions cleanly
+    // Always push conditions cleanly
     if (showDeleted) {
-      conditions.push(eq(coursesTable.isDeleted, true)); // ✅ FIX
+      conditions.push(eq(coursesTable.isDeleted, true)); // FIX
     } else {
       conditions.push(eq(coursesTable.isDeleted, false));
     }
@@ -35,10 +35,10 @@ export async function GET(req) {
       conditions.push(eq(coursesTable.isPublished, false));
     }
 
-    // ✅ Avoid unnecessary and() if empty
+    // Avoid unnecessary and() if empty
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-    // ✅ Select only required fields (MAJOR PERFORMANCE BOOST)
+    // Select only required fields (MAJOR PERFORMANCE BOOST)
     const courses = await db
       .select({
         cid: coursesTable.cid,

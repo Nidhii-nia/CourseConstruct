@@ -390,7 +390,7 @@ function ChapterTopicList({ course }) {
     setIsSaving(true);
 
     try {
-      // ✅ Build final course JSON from local state
+      // Build final course JSON from local state
       const finalLocalState = {
         course: {
           ...courseLayout,
@@ -415,10 +415,10 @@ function ChapterTopicList({ course }) {
         id: toastId,
       });
 
-      // ✅ Clear pending updates
+      // Clear pending updates
       setPendingUpdates([]);
 
-      // ✅ Refresh data (VERY IMPORTANT)
+      // Refresh data (VERY IMPORTANT)
       queryClient.invalidateQueries(["courses", "dashboard"]);
       queryClient.invalidateQueries(["course", course.cid]);
     } catch (error) {

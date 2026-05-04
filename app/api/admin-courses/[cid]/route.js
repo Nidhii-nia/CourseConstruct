@@ -13,7 +13,7 @@ export async function GET(_, { params }) {
       .where(
         and(
           eq(coursesTable.cid, cid),
-          eq(coursesTable.isDeleted, false) // ✅ filter
+          eq(coursesTable.isDeleted, false) // filter
         )
       )
       .then((res) => res[0]);

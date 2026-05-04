@@ -150,7 +150,7 @@ const GenerateCourseContent = () => {
   handleGenerate(); // 👈 direct call
 };
 
-  // ✅ total duration (ONLY from DB data)
+  // total duration (ONLY from DB data)
   const totalMinutes =
     chapters?.reduce((sum, chapter) => {
       return sum + parseDurationToMinutes(chapter.duration);
