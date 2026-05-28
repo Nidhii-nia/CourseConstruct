@@ -286,7 +286,7 @@ async function generateTopicWithRetry(
 
       temperature: 0.3,
 
-      max_completion_tokens: 4000,
+      max_completion_tokens: 3000,
 
       top_p: 1,
     });
