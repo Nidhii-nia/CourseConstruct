@@ -45,7 +45,15 @@ function ChapterContent({ courseInfo, topicRefs, refreshData }) {
 
   const playlistData = youtubeContent?.playlists || [];
 
-  const includeVideo = courseInfo?.courses?.includeVideo;
+  const includeVideo =
+  courseInfo?.courses?.includeVideo === true ||
+  courseInfo?.courses?.includeVideo === "true";
+
+    console.log("📺 ChapterContent - includeVideo:", includeVideo);
+  console.log("📺 ChapterContent - youtubeContent:", youtubeContent);
+  console.log("📺 ChapterContent - videoData:", videoData);
+  console.log("📺 ChapterContent - videoData length:", videoData.length);
+  console.log("📺 ChapterContent - playlistData length:", playlistData.length);
 
   const topics = courseContent?.[selectedChapterIndex]?.courseData?.topics;
 
@@ -389,244 +397,224 @@ w-auto
           <div className="max-w-6xl mx-auto h-px bg-border" />
 
           {/* VIDEOS */}
-          {includeVideo &&
-            (videoData?.length > 0 || playlistData?.length > 0) && (
-              <div className="max-w-6xl mx-auto space-y-6">
-                {/* HEADING */}
-                <div className="flex items-center gap-2">
-                  <h3
+{/* VIDEOS */}
+{includeVideo &&
+  (videoData?.length > 0 || playlistData?.length > 0) && (
+    <div className="max-w-6xl mx-auto space-y-4">
+      {console.log("📺 RENDERING VIDEOS - Count:", videoData.length)}
+      {/* HEADING */}
+      <div className="flex items-center gap-2">
+        <h3
+          className="
+            text-lg
+            sm:text-xl
+            font-bold
+            text-gray-800
+            dark:text-white
+          "
+        >
+          Related Videos
+        </h3>
+        <Video className="w-4 h-4 text-emerald-500" />
+      </div>
+
+      {/* VIDEO GRID - SMALLER CARDS */}
+      <div
+        className={`
+          grid
+          gap-3
+          sm:gap-4
+          ${
+            isCollapsed
+              ? `
+                grid-cols-1
+                sm:grid-cols-2
+                lg:grid-cols-3
+                xl:grid-cols-3
+              `
+              : `
+                grid-cols-1
+                sm:grid-cols-2
+                lg:grid-cols-2
+                xl:grid-cols-3
+              `
+          }
+        `}
+      >
+        {videoData
+          .filter((video) => video?.videoId)
+          .map((video, index) => (
+            <div
+              key={index}
+              className="
+                rounded-xl
+                border
+                border-emerald-200
+                dark:border-emerald-500/20
+                bg-white/90
+                dark:bg-gray-900/70
+                backdrop-blur-xl
+                shadow-md
+                hover:shadow-lg
+                transition-all
+                duration-300
+                overflow-hidden
+              "
+            >
+              {/* VIDEO - SMALLER */}
+              <div className="aspect-video w-full overflow-hidden">
+                <YouTube
+                  videoId={video?.videoId}
+                  opts={{
+                    width: "100%",
+                    height: "100%",
+                    playerVars: {
+                      modestbranding: 1,
+                      rel: 0,
+                    },
+                  }}
+                  iframeClassName="w-full h-full"
+                  onReady={(event) => handleReady(index, event)}
+                  onPlay={() => handlePlay(index)}
+                />
+              </div>
+
+              {/* CONTENT - SMALLER PADDING */}
+              <div className="p-3 sm:p-4">
+                <h4
+                  className="
+                    font-semibold
+                    text-sm
+                    sm:text-base
+                    text-gray-800
+                    dark:text-white
+                    leading-snug
+                    line-clamp-2
+                  "
+                >
+                  {video?.title}
+                </h4>
+                {video?.meta && (
+                  <p
                     className="
-                      text-xl
-                      sm:text-2xl
-
-                      font-bold
-
-                      text-gray-800
-                      dark:text-white
+                      text-xs
+                      text-gray-500
+                      dark:text-gray-400
+                      mt-1
+                      line-clamp-1
                     "
                   >
-                    Related Videos
-                  </h3>
-
-                  <Video
-                    className="
-                      w-5
-                      h-5
-
-                      text-emerald-500
-                    "
-                  />
-                </div>
-
-                {/* VIDEO GRID */}
-                <div
-                  className={`
-                    grid
-
-                    gap-6
-
-                    ${
-                      isCollapsed
-                        ? `
-                          grid-cols-1
-                          xl:grid-cols-3
-                        `
-                        : `
-                          grid-cols-1
-                          xl:grid-cols-2
-                        `
-                    }
-                  `}
-                >
-                  {videoData.map((video, index) => (
-                    <div
-                      key={index}
-                      className="
-                          rounded-3xl
-
-                          border
-                          border-emerald-200
-                          dark:border-emerald-500/20
-
-                          bg-white/90
-                          dark:bg-gray-900/70
-
-                          backdrop-blur-xl
-
-                          shadow-lg
-                          hover:shadow-2xl
-
-                          transition-all
-                          duration-300
-
-                          overflow-hidden
-                        "
-                    >
-                      {/* VIDEO */}
-                      <div className="aspect-video w-full overflow-hidden">
-                        <YouTube
-                          videoId={video?.videoId}
-                          opts={{
-                            width: "100%",
-                            height: "100%",
-
-                            playerVars: {
-                              modestbranding: 1,
-
-                              rel: 0,
-                            },
-                          }}
-                          iframeClassName="w-full h-full"
-                          onReady={(event) => handleReady(index, event)}
-                          onPlay={() => handlePlay(index)}
-                        />
-                      </div>
-
-                      {/* CONTENT */}
-                      <div className="p-5">
-                        <h4
-                          className="
-                              font-semibold
-
-                              text-gray-800
-                              dark:text-white
-
-                              leading-snug
-
-                              line-clamp-2
-                            "
-                        >
-                          {video?.title}
-                        </h4>
-
-                        {video?.meta && (
-                          <p
-                            className="
-                                text-sm
-
-                                text-gray-500
-                                dark:text-gray-400
-
-                                mt-2
-                              "
-                          >
-                            {video?.meta}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* PLAYLISTS */}
-                {playlistData?.length > 0 && (
-                  <div className="space-y-5 pt-4">
-                    <h3
-                      className="
-                        text-xl
-                        sm:text-2xl
-
-                        font-bold
-
-                        text-gray-800
-                        dark:text-white
-                      "
-                    >
-                      Recommended Playlists
-                    </h3>
-
-                    <div
-                      className={`
-                        grid
-
-                        gap-6
-
-                        ${
-                          isCollapsed
-                            ? `
-                              grid-cols-1
-                              xl:grid-cols-3
-                            `
-                            : `
-                              grid-cols-1
-                              xl:grid-cols-2
-                            `
-                        }
-                      `}
-                    >
-                      {playlistData.map((playlist, index) => (
-                        <a
-                          key={index}
-                          href={`https://www.youtube.com/playlist?list=${playlist.playlistId}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="
-                              rounded-3xl
-
-                              border
-                              border-emerald-200
-                              dark:border-emerald-500/20
-
-                              bg-white/90
-                              dark:bg-gray-900/70
-
-                              backdrop-blur-xl
-
-                              shadow-lg
-                              hover:shadow-2xl
-
-                              transition-all
-                              duration-300
-
-                              overflow-hidden
-                            "
-                        >
-                          <img
-                            src={playlist.thumbnail}
-                            alt={playlist.title}
-                            className="
-                                w-full
-
-                                aspect-video
-
-                                object-cover
-                              "
-                          />
-
-                          <div className="p-5">
-                            <h4
-                              className="
-                                  font-semibold
-
-                                  text-gray-800
-                                  dark:text-white
-
-                                  line-clamp-2
-                                "
-                            >
-                              {playlist.title}
-                            </h4>
-
-                            <p
-                              className="
-                                  text-sm
-
-                                  text-gray-500
-                                  dark:text-gray-400
-
-                                  mt-2
-                                "
-                            >
-                              {playlist.channelTitle}
-                            </p>
-                          </div>
-                        </a>
-                      ))}
-                    </div>
-                  </div>
+                    {video?.meta}
+                  </p>
                 )}
               </div>
-            )}
+            </div>
+          ))}
+      </div>
+
+      {/* PLAYLISTS - SMALLER CARDS */}
+      {playlistData?.length > 0 && (
+        <div className="space-y-3 pt-2">
+          <h3
+            className="
+              text-lg
+              sm:text-xl
+              font-bold
+              text-gray-800
+              dark:text-white
+            "
+          >
+            Recommended Playlists
+          </h3>
+
+          <div
+            className={`
+              grid
+              gap-3
+              sm:gap-4
+              ${
+                isCollapsed
+                  ? `
+                    grid-cols-1
+                    sm:grid-cols-2
+                    lg:grid-cols-3
+                    xl:grid-cols-3
+                  `
+                  : `
+                    grid-cols-1
+                    sm:grid-cols-2
+                    lg:grid-cols-2
+                    xl:grid-cols-3
+                  `
+              }
+            `}
+          >
+            {playlistData.map((playlist, index) => (
+              <a
+                key={index}
+                href={`https://www.youtube.com/playlist?list=${playlist.playlistId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="
+                  rounded-xl
+                  border
+                  border-emerald-200
+                  dark:border-emerald-500/20
+                  bg-white/90
+                  dark:bg-gray-900/70
+                  backdrop-blur-xl
+                  shadow-md
+                  hover:shadow-lg
+                  transition-all
+                  duration-300
+                  overflow-hidden
+                  group
+                "
+              >
+                <img
+                  src={playlist.thumbnail}
+                  alt={playlist.title}
+                  className="
+                    w-full
+                    aspect-video
+                    object-cover
+                    group-hover:scale-105
+                    transition-transform
+                    duration-300
+                  "
+                />
+                <div className="p-3 sm:p-4">
+                  <h4
+                    className="
+                      font-semibold
+                      text-sm
+                      sm:text-base
+                      text-gray-800
+                      dark:text-white
+                      line-clamp-2
+                    "
+                  >
+                    {playlist.title}
+                  </h4>
+                  <p
+                    className="
+                      text-xs
+                      text-gray-500
+                      dark:text-gray-400
+                      mt-1
+                      line-clamp-1
+                    "
+                  >
+                    {playlist.channelTitle}
+                  </p>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )}
 
           {/* TOPICS */}
           <div className="max-w-6xl mx-auto space-y-8 lg:space-y-10">

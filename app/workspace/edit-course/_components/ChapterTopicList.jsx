@@ -992,6 +992,180 @@ function ChapterTopicList({ course }) {
         ))}
       </div>
 
+      {/* ADD CHAPTER */}
+<div className="flex justify-center mt-10">
+  {addingChapter ? (
+    <div
+      className="
+        w-full
+        max-w-2xl
+
+        rounded-3xl
+
+        border
+        border-emerald-200
+        dark:border-emerald-500/20
+
+        bg-white
+        dark:bg-gray-900
+
+        p-5
+
+        shadow-lg
+      "
+    >
+      <div className="flex flex-col gap-4">
+        <input
+          value={newChapterName}
+          onChange={(e) =>
+            setNewChapterName(e.target.value)
+          }
+          placeholder="Enter chapter name"
+          className="
+            w-full
+
+            rounded-2xl
+
+            border
+            border-emerald-300
+
+            bg-white
+            dark:bg-gray-950
+
+            px-4
+            py-3
+
+            outline-none
+
+            focus:ring-2
+            focus:ring-emerald-500
+
+            dark:text-white
+          "
+        />
+
+        <div className="flex gap-3 justify-end">
+          <button
+            onClick={() => {
+              if (!newChapterName.trim()) {
+                toast.error(
+                  "Chapter name cannot be empty",
+                );
+
+                return;
+              }
+
+              const newChapter = {
+                chapterName:
+                  newChapterName.trim(),
+
+                duration: "30 mins",
+
+                topics: [],
+              };
+
+              setLocalChapters((prev) => [
+                ...prev,
+                newChapter,
+              ]);
+
+              setLocalTopics((prev) => ({
+                ...prev,
+
+                [localChapters.length]: [],
+              }));
+
+              setPendingUpdates((prev) => [
+                ...prev,
+                {
+                  action: "chapter-add",
+                  chapterName:
+                    newChapterName.trim(),
+                },
+              ]);
+
+              setAddingChapter(false);
+
+              setNewChapterName("");
+
+              toast.success(
+                "Chapter added locally",
+              );
+            }}
+            className="
+              px-5
+              py-3
+
+              rounded-2xl
+
+              bg-emerald-600
+              hover:bg-emerald-700
+
+              text-white
+
+              font-semibold
+            "
+          >
+            Save Chapter
+          </button>
+
+          <button
+            onClick={() => {
+              setAddingChapter(false);
+
+              setNewChapterName("");
+            }}
+            className="
+              px-5
+              py-3
+
+              rounded-2xl
+
+              bg-red-100
+              dark:bg-red-500/10
+
+              text-red-600
+              dark:text-red-300
+
+              font-semibold
+            "
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : (
+    <button
+      onClick={() => setAddingChapter(true)}
+      className="
+        flex
+        items-center
+        gap-3
+
+        rounded-full
+
+        bg-emerald-600
+        hover:bg-emerald-700
+
+        px-6
+        py-4
+
+        text-white
+
+        font-bold
+
+        shadow-lg
+
+        transition-all
+      "
+    >
+      <Plus size={20} />
+      Add New Chapter
+    </button>
+  )}
+</div>
+
       {/* SAVE */}
       <div className="flex justify-center mt-10">
         <button

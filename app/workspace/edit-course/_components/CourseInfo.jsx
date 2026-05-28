@@ -209,39 +209,39 @@ function CourseInfo({ course, viewCourse }) {
      GENERATE
   ========================================= */
 
-  const handleGenerate = async () => {
-    setLoading(true);
+const handleGenerate = async () => {
+  setLoading(true);
+  startLoading();
 
-    startLoading();
+  try {
+    const clientRequestId = uuid4();
+    
+    // Get includeVideo from course data or sessionStorage
+    const includeVideoValue = course?.includeVideo || 
+                             JSON.parse(sessionStorage.getItem("courseFormData") || "{}")?.includeVideo || 
+                             false;
 
-    try {
-      const clientRequestId = uuid4();
+    console.log("🎬 Sending includeVideo to API:", includeVideoValue); // Debug log
 
-      await axios.post("/api/generate-course-content", {
-        courseJson: courseLayout,
+    await axios.post("/api/generate-course-content", {
+      courseJson: courseLayout,
+      courseTitle: course?.name,
+      courseId: course?.cid,
+      clientRequestId,
+      includeVideo: includeVideoValue  // ✅ Now it's included!
+    });
 
-        courseTitle: course?.name,
-
-        courseId: course?.cid,
-
-        clientRequestId,
-      });
-
-      toast.success("Content Generated Successfully!");
-
-      queryClient.invalidateQueries(["courses", "dashboard"]);
-
-      router.replace("/workspace");
-    } catch (e) {
-      console.error("Generate course error:", e);
-
-      toast.error("Server side error! Please try again.");
-    } finally {
-      setLoading(false);
-
-      stopLoading();
-    }
-  };
+    toast.success("Content Generated Successfully!");
+    queryClient.invalidateQueries(["courses", "dashboard"]);
+    router.replace("/workspace");
+  } catch (e) {
+    console.error("Generate course error:", e);
+    toast.error("Server side error! Please try again.");
+  } finally {
+    setLoading(false);
+    stopLoading();
+  }
+};
 
   const GenerateCourseContent = () => {
     if (loading) return;

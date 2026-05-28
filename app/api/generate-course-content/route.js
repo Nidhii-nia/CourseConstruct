@@ -64,27 +64,29 @@ function delay(ms) {
 
 function cleanMathContent(content) {
   if (!content) return content;
-  
-  return content
-    // Fix common LaTeX escaping issues
-    .replace(/\\\(/g, '\\(')
-    .replace(/\\\)/g, '\\)')
-    .replace(/\\\[/g, '\\[')
-    .replace(/\\\]/g, '\\]')
-    // Ensure proper spacing around math delimiters
-    .replace(/([^\\])\\(\[|\()/g, '$1 \\$2')
-    .replace(/(\\\]|\\\))([^\\])/g, '$1 $2')
-    // Fix double-escaped display math
-    .replace(/\\\\\\\[/g, '\\[')
-    .replace(/\\\\\\\]/g, '\\]')
-    // Fix cases where $ is escaped
-    .replace(/\\\$/g, '$')
-    // Fix inconsistent display math formatting
-    .replace(/\$\$\s*\n\s*([\s\S]*?)\s*\n\s*\$\$/g, (_, math) => {
-      return `$$\n${math.trim()}\n$$`;
-    })
-    // Convert \displaystyle to proper display math
-    .replace(/\\displaystyle/g, '');
+
+  return (
+    content
+      // Fix common LaTeX escaping issues
+      .replace(/\\\(/g, "\\(")
+      .replace(/\\\)/g, "\\)")
+      .replace(/\\\[/g, "\\[")
+      .replace(/\\\]/g, "\\]")
+      // Ensure proper spacing around math delimiters
+      .replace(/([^\\])\\(\[|\()/g, "$1 \\$2")
+      .replace(/(\\\]|\\\))([^\\])/g, "$1 $2")
+      // Fix double-escaped display math
+      .replace(/\\\\\\\[/g, "\\[")
+      .replace(/\\\\\\\]/g, "\\]")
+      // Fix cases where $ is escaped
+      .replace(/\\\$/g, "$")
+      // Fix inconsistent display math formatting
+      .replace(/\$\$\s*\n\s*([\s\S]*?)\s*\n\s*\$\$/g, (_, math) => {
+        return `$$\n${math.trim()}\n$$`;
+      })
+      // Convert \displaystyle to proper display math
+      .replace(/\\displaystyle/g, "")
+  );
 }
 
 // ======================================================
@@ -328,27 +330,34 @@ async function generateTopicWithRetry(
 
 async function GetYoutubeVideo(topic, courseName, maxPerChapter = 4) {
   if (!process.env.YOUTUBE_API_KEY) {
+    console.error("YOUTUBE_API_KEY is not set in environment variables");
     return {
       videos: [],
       playlists: [],
     };
   }
 
-  const query = `     ${topic} ${courseName}
-    full course lecture tutorial university
-  `.trim();
+  // Create a better search query
+  const searchQuery = `
+${courseName}
+${topic}
+full course tutorial
+`.trim();
+
+  console.log(`Searching YouTube for: "${searchQuery}"`);
 
   try {
     // ======================================================
-    // FETCH VIDEOS + PLAYLISTS
+    // FETCH VIDEOS
     // ======================================================
 
-    const [videoResponse, playlistResponse] = await Promise.all([
-      axios.get("https://www.googleapis.com/youtube/v3/search", {
+    const videoResponse = await axios.get(
+      "https://www.googleapis.com/youtube/v3/search",
+      {
         params: {
           part: "snippet",
-          q: query,
-          maxResults: 10,
+          q: searchQuery,
+          maxResults: 15,
           type: "video",
           videoDuration: "medium",
           relevanceLanguage: "en",
@@ -356,12 +365,22 @@ async function GetYoutubeVideo(topic, courseName, maxPerChapter = 4) {
           safeSearch: "strict",
           key: process.env.YOUTUBE_API_KEY,
         },
-      }),
+      },
+    );
 
-      axios.get("https://www.googleapis.com/youtube/v3/search", {
+    console.log(`YouTube API Response Status: ${videoResponse.status}`);
+    console.log(`Found ${videoResponse?.data?.items?.length || 0} videos`);
+
+    // ======================================================
+    // FETCH PLAYLISTS
+    // ======================================================
+
+    const playlistResponse = await axios.get(
+      "https://www.googleapis.com/youtube/v3/search",
+      {
         params: {
           part: "snippet",
-          q: query,
+          q: searchQuery,
           maxResults: 5,
           type: "playlist",
           relevanceLanguage: "en",
@@ -369,8 +388,12 @@ async function GetYoutubeVideo(topic, courseName, maxPerChapter = 4) {
           safeSearch: "strict",
           key: process.env.YOUTUBE_API_KEY,
         },
-      }),
-    ]);
+      },
+    );
+
+    console.log(
+      `Found ${playlistResponse?.data?.items?.length || 0} playlists`,
+    );
 
     // ======================================================
     // FILTER LOW QUALITY CONTENT
@@ -385,28 +408,35 @@ async function GetYoutubeVideo(topic, courseName, maxPerChapter = 4) {
       "trailer",
       "meme",
       "edit",
+      "reaction",
+      "live",
     ];
 
     const cleanVideos = (videoResponse?.data?.items || []).filter((item) => {
       const title = item?.snippet?.title?.toLowerCase() || "";
-
-      return !blockedWords.some((word) => title.includes(word));
+      const isValid = !blockedWords.some((word) => title.includes(word));
+      return isValid;
     });
 
     // ======================================================
     // FORMAT VIDEOS
     // ======================================================
 
-    const videos = cleanVideos.slice(0, maxPerChapter).map((item) => ({
-      type: "video",
-      videoId: item?.id?.videoId || "",
-      title: item?.snippet?.title || "Untitled Video",
-      thumbnail:
-        item?.snippet?.thumbnails?.high?.url ||
-        item?.snippet?.thumbnails?.medium?.url ||
-        "",
-      channelTitle: item?.snippet?.channelTitle || "Unknown Channel",
-    }));
+    const videos = cleanVideos
+      .filter((video) => video.videoId && video.title && video.thumbnail)
+      .slice(0, maxPerChapter)
+      .map((item) => ({
+        type: "video",
+        videoId: item?.id?.videoId || "",
+        title: item?.snippet?.title || "Untitled Video",
+        thumbnail:
+          item?.snippet?.thumbnails?.high?.url ||
+          item?.snippet?.thumbnails?.medium?.url ||
+          item?.snippet?.thumbnails?.default?.url ||
+          "",
+        channelTitle: item?.snippet?.channelTitle || "Unknown Channel",
+        meta: `${item?.snippet?.channelTitle} • ${new Date(item?.snippet?.publishedAt).getFullYear()}`,
+      }));
 
     // ======================================================
     // FORMAT PLAYLISTS
@@ -415,9 +445,9 @@ async function GetYoutubeVideo(topic, courseName, maxPerChapter = 4) {
     const playlists = (playlistResponse?.data?.items || [])
       .filter((item) => {
         const title = item?.snippet?.title?.toLowerCase() || "";
-
         return !blockedWords.some((word) => title.includes(word));
       })
+      .slice(0, 3)
       .map((item) => ({
         type: "playlist",
         playlistId: item?.id?.playlistId || "",
@@ -425,23 +455,25 @@ async function GetYoutubeVideo(topic, courseName, maxPerChapter = 4) {
         thumbnail:
           item?.snippet?.thumbnails?.high?.url ||
           item?.snippet?.thumbnails?.medium?.url ||
+          item?.snippet?.thumbnails?.default?.url ||
           "",
         channelTitle: item?.snippet?.channelTitle || "Unknown Channel",
       }));
 
-    // ======================================================
-    // RETURN DATA
-    // ======================================================
+    console.log(
+      `Returning ${videos.length} videos and ${playlists.length} playlists`,
+    );
 
     return {
       videos,
       playlists,
     };
   } catch (err) {
-    console.error(
-      " YouTube fetch error:",
-      err?.response?.data || err?.message || err,
-    );
+    console.error("YouTube fetch error details:", {
+      message: err?.message,
+      response: err?.response?.data,
+      status: err?.response?.status,
+    });
 
     return {
       videos: [],
@@ -458,6 +490,10 @@ export async function POST(req) {
   try {
     const { courseJson, courseTitle, courseId, clientRequestId, includeVideo } =
       await req.json();
+
+    console.log(" API Received - includeVideo:", includeVideo);
+    console.log("Type:", typeof includeVideo);
+    console.log("Course Title:", courseTitle);
 
     // ======================================================
     //  VALIDATION
@@ -546,12 +582,24 @@ export async function POST(req) {
         playlists: [],
       };
 
-      if (includeVideo === true) {
+      console.log(
+        `🎬 Chapter: ${chapter.chapterName}, includeVideo value:`,
+        includeVideo,
+      );
+
+      const shouldIncludeVideo =
+        includeVideo === true || includeVideo === "true";
+
+      if (shouldIncludeVideo) {
+        console.log(`🎬 FETCHING videos for: ${chapter.chapterName}`);
         youtubeContent = await GetYoutubeVideo(
           chapter.chapterName,
           courseTitle,
           4,
         );
+        console.log(`🎬 Fetched ${youtubeContent.videos.length} videos`);
+      } else {
+        console.log(`🎬 SKIPPING videos for: ${chapter.chapterName}`); // ✅ ADD THIS
       }
 
       // ======================================================
@@ -567,6 +615,9 @@ export async function POST(req) {
           topics: generatedTopics,
         },
       });
+      console.log(
+        `🎬 Saved chapter with ${youtubeContent.videos.length} videos`,
+      );
 
       // ======================================================
       //  CHAPTER DELAY

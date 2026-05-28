@@ -25,6 +25,8 @@ export async function DELETE(req) {
       );
     }
 
+    // ✅ Get the full user object
+    const user = await currentUser();
 
     if (!user) {
       return NextResponse.json(

@@ -8,17 +8,16 @@ export async function PUT(req) {
   try {
     console.log("🔵 Updating course...");
 
-    const { userId } = await auth();
-    const user = await currentUser();
+const user = await currentUser();
 
-    if (!userId || !user) {
-      return NextResponse.json(
-        { error: "Unauthorized - Please log in" },
-        { status: 401 }
-      );
-    }
+if (!user) {
+  return NextResponse.json(
+    { error: "Unauthorized - Please log in" },
+    { status: 401 }
+  );
+}
 
-    const userEmail = user.emailAddresses[0]?.emailAddress;
+const userEmail = user.emailAddresses[0]?.emailAddress;
 
     //  Validate email exists
     if (!userEmail) {

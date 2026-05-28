@@ -291,9 +291,12 @@ function AddNewCourseDialogue({ children }) {
 
             <Switch
               checked={formData.includeVideo}
-              onCheckedChange={(checked) =>
-                onHandleInputChange("includeVideo", checked)
-              }
+onCheckedChange={(checked) =>
+  onHandleInputChange(
+    "includeVideo",
+    Boolean(checked)
+  )
+}
               disabled={isLoading}
             />
           </div>
