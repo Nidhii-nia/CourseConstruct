@@ -321,7 +321,7 @@ function ChapterTopicList({ course }) {
             border-emerald-200
             dark:border-emerald-500/20
 
-            bg-gradient-to-br
+            bg-linear-to-br
             from-emerald-50
             to-white
 

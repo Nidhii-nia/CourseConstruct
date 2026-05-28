@@ -94,7 +94,7 @@ export default function AdminLayout({ children }) {
         h-screen
         overflow-hidden
 
-        bg-gradient-to-br
+        bg-linear-to-br
         from-emerald-50
         to-blue-50
 

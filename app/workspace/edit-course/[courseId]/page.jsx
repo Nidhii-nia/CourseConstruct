@@ -120,7 +120,7 @@ function EditCourse({
 
           px-4
 
-          bg-gradient-to-br
+          bg-linear-to-br
           from-emerald-50
           via-white
           to-cyan-50
@@ -235,7 +235,7 @@ function EditCourse({
 
           px-4
 
-          bg-gradient-to-br
+          bg-linear-to-br
           from-red-50
           via-white
           to-rose-50
@@ -367,7 +367,7 @@ function EditCourse({
 
           px-4
 
-          bg-gradient-to-br
+          bg-linear-to-br
           from-emerald-50
           via-white
           to-cyan-50
@@ -445,7 +445,7 @@ function EditCourse({
 
         py-6
 
-        bg-gradient-to-br
+        bg-linear-to-br
         from-emerald-50
         via-white
         to-cyan-50

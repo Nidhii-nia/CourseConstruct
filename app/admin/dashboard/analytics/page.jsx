@@ -94,7 +94,7 @@ export default function AnalyticsPage() {
 
         min-h-screen
 
-        bg-gradient-to-br
+        bg-linear-to-br
         from-slate-50
         via-white
         to-emerald-50
@@ -385,7 +385,7 @@ function KPI({ title, value, trend }) {
   return (
     <div
       className={`
-        bg-gradient-to-br
+        bg-linear-to-br
         ${bg}
 
         text-white
@@ -407,7 +407,7 @@ function KPI({ title, value, trend }) {
         {title}
       </p>
 
-      <p className="text-2xl font-bold mt-1 break-words">
+      <p className="text-2xl font-bold mt-1 wrap-break-word">
         {value}
       </p>
 

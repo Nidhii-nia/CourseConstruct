@@ -29,7 +29,7 @@ export default async function UserDetail({
 
           min-h-screen
 
-          bg-gradient-to-br
+          bg-linear-to-br
           from-emerald-50/40
           via-white
           to-blue-50/40
@@ -99,7 +99,7 @@ export default async function UserDetail({
 
         min-h-screen
 
-        bg-gradient-to-br
+        bg-linear-to-br
         from-emerald-50/40
         via-white
         to-blue-50/40
@@ -177,7 +177,7 @@ export default async function UserDetail({
               text-gray-800
               dark:text-white
 
-              break-words
+              wrap-break-word
             "
           >
             {user.name}
@@ -242,7 +242,7 @@ export default async function UserDetail({
         {/* CREATED */}
         <div
           className="
-            bg-gradient-to-br
+            bg-linear-to-br
             from-blue-50
             to-blue-100
 
@@ -289,7 +289,7 @@ export default async function UserDetail({
         {/* ENROLLED */}
         <div
           className="
-            bg-gradient-to-br
+            bg-linear-to-br
             from-purple-50
             to-purple-100
 
@@ -407,7 +407,7 @@ export default async function UserDetail({
 
                   <div className="flex flex-wrap items-center gap-2">
 
-                    <p className="font-medium text-sm text-gray-800 dark:text-white break-words">
+                    <p className="font-medium text-sm text-gray-800 dark:text-white wrap-break-word">
                       {c.name}
                     </p>
 
@@ -584,7 +584,7 @@ export default async function UserDetail({
 
                     <div className="flex flex-wrap items-center gap-2">
 
-                      <p className="font-medium text-sm text-gray-800 dark:text-white break-words">
+                      <p className="font-medium text-sm text-gray-800 dark:text-white wrap-break-word">
                         {c.name}
                       </p>
 

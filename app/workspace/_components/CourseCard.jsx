@@ -338,7 +338,7 @@ function CourseCard({
           transition-opacity
           duration-500
 
-          bg-gradient-to-br
+          bg-linear-to-br
           from-emerald-500/5
           via-transparent
           to-green-500/5

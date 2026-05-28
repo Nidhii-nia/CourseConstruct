@@ -318,7 +318,7 @@ export default function RouteLoaderInner() {
 
           h-1
 
-          z-[9999]
+          z-9999
 
           bg-gray-200/70
           dark:bg-gray-800/70
@@ -357,7 +357,7 @@ export default function RouteLoaderInner() {
             top-4
             right-4
 
-            z-[9999]
+            z-9999
           "
         >
           <div

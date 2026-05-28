@@ -130,7 +130,7 @@ function Course() {
         className="
           min-h-screen
 
-          bg-gradient-to-br
+          bg-linear-to-br
           from-emerald-50/30
           via-white
           to-blue-50/30

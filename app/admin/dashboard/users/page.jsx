@@ -60,7 +60,7 @@ export default function UsersPage() {
 
         min-h-screen
 
-        bg-gradient-to-br
+        bg-linear-to-br
         from-emerald-50/40
         via-white
         to-blue-50/40
@@ -195,7 +195,7 @@ export default function UsersPage() {
                     Name
                   </p>
 
-                  <p className="font-medium text-gray-800 dark:text-white break-words">
+                  <p className="font-medium text-gray-800 dark:text-white wrap-break-word">
                     {user.name}
                   </p>
                 </div>
@@ -365,7 +365,7 @@ export default function UsersPage() {
                     `}
                   >
                     {/* NAME */}
-                    <td className="p-4 font-medium text-gray-800 dark:text-white break-words">
+                    <td className="p-4 font-medium text-gray-800 dark:text-white wrap-break-word">
                       {user.name}
                     </td>
 

@@ -52,7 +52,7 @@ export default function ReportsPage() {
 
         min-h-screen
 
-        bg-gradient-to-br
+        bg-linear-to-br
         from-emerald-50/40
         via-white
         to-blue-50/40
@@ -182,7 +182,7 @@ export default function ReportsPage() {
                       User
                     </p>
 
-                    <p className="font-medium text-gray-800 dark:text-white break-words">
+                    <p className="font-medium text-gray-800 dark:text-white wrap-break-word">
                       {report.user}
                     </p>
                   </div>
@@ -193,7 +193,7 @@ export default function ReportsPage() {
                       Feedback
                     </p>
 
-                    <p className="text-sm text-gray-600 dark:text-gray-300 break-words leading-relaxed">
+                    <p className="text-sm text-gray-600 dark:text-gray-300 wrap-break-word leading-relaxed">
                       {report.message}
                     </p>
                   </div>
@@ -275,14 +275,14 @@ export default function ReportsPage() {
                     >
                       {/* USER */}
                       <td className="p-4">
-                        <div className="font-medium text-gray-800 dark:text-white break-words">
+                        <div className="font-medium text-gray-800 dark:text-white wrap-break-word">
                           {report.user}
                         </div>
                       </td>
 
                       {/* MESSAGE */}
                       <td className="p-4 max-w-[400px]">
-                        <p className="text-gray-600 dark:text-gray-300 break-words leading-relaxed">
+                        <p className="text-gray-600 dark:text-gray-300 wrap-break-word leading-relaxed">
                           {report.message}
                         </p>
                       </td>

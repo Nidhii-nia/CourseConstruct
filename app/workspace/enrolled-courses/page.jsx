@@ -243,7 +243,7 @@ function EnrolledCourses() {
         p-4
         sm:p-6
 
-        bg-gradient-to-br
+        bg-linear-to-br
         from-emerald-50
         via-white
         to-cyan-50

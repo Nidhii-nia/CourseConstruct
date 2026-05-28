@@ -47,7 +47,7 @@ export default function DashboardPage() {
 
         min-h-screen
 
-        bg-gradient-to-br
+        bg-linear-to-br
         from-emerald-50/30
         to-blue-50/30
 
@@ -103,7 +103,7 @@ export default function DashboardPage() {
               {item.title}
             </p>
 
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-white mt-2 break-words">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-white mt-2 wrap-break-word">
               {item.value}
             </h2>
           </div>
@@ -123,7 +123,7 @@ export default function DashboardPage() {
 
               p-5
 
-              bg-gradient-to-br
+              bg-linear-to-br
               from-emerald-100
               to-emerald-50
 
@@ -163,7 +163,7 @@ export default function DashboardPage() {
 
               p-5
 
-              bg-gradient-to-br
+              bg-linear-to-br
               from-blue-100
               to-blue-50
 
@@ -203,7 +203,7 @@ export default function DashboardPage() {
 
               p-5
 
-              bg-gradient-to-br
+              bg-linear-to-br
               from-purple-100
               to-purple-50
 
@@ -299,7 +299,7 @@ export default function DashboardPage() {
                         dark:border-emerald-500/20
                       `}
                     >
-                      <p className="text-gray-700 dark:text-gray-300 break-words">
+                      <p className="text-gray-700 dark:text-gray-300 wrap-break-word">
                         <b className="text-emerald-700 dark:text-emerald-300">
                           {item.user}
                         </b>{" "}
@@ -327,7 +327,7 @@ export default function DashboardPage() {
                         dark:border-blue-500/20
                       `}
                     >
-                      <p className="text-gray-700 dark:text-gray-300 break-words">
+                      <p className="text-gray-700 dark:text-gray-300 wrap-break-word">
                         <b className="text-blue-700 dark:text-blue-300">
                           {item.user}
                         </b>{" "}
@@ -352,7 +352,7 @@ export default function DashboardPage() {
                         dark:border-purple-500/20
                       `}
                     >
-                      <p className="text-gray-700 dark:text-gray-300 break-words">
+                      <p className="text-gray-700 dark:text-gray-300 wrap-break-word">
                         <b className="text-purple-700 dark:text-purple-300">
                           {item.user}
                         </b>{" "}
@@ -380,7 +380,7 @@ export default function DashboardPage() {
                         dark:border-yellow-500/20
                       `}
                     >
-                      <p className="text-gray-700 dark:text-gray-300 break-words">
+                      <p className="text-gray-700 dark:text-gray-300 wrap-break-word">
                         <b className="text-yellow-700 dark:text-yellow-300">
                           {item.user}
                         </b>{" "}

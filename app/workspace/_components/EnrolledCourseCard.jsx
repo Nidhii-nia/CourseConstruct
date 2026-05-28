@@ -111,7 +111,7 @@ function EnrolledCourseCard({
         group
 
         w-full
-        max-w-[310px]
+        max-w-77.5
       "
     >
       {/* =========================================

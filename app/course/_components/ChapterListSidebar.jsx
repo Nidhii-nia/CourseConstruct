@@ -870,7 +870,7 @@ export default function ChapterListSidebar({ courseInfo, topicRefs }) {
 
               p-5
 
-              bg-gradient-to-br
+              bg-linear-to-br
               from-emerald-500
               to-emerald-600
 
@@ -1049,7 +1049,7 @@ export default function ChapterListSidebar({ courseInfo, topicRefs }) {
                             text-gray-900
                             dark:text-white
 
-                            break-words
+                            wrap-break-word
                           "
                       >
                         {chapter.courseData?.chapterName}
@@ -1214,7 +1214,7 @@ export default function ChapterListSidebar({ courseInfo, topicRefs }) {
                               {tIndex + 1}
                             </div>
 
-                            <span className="flex-1 font-medium break-words">
+                            <span className="flex-1 font-medium wrap-break-word">
                               {topic.topic}
                             </span>
 
@@ -1279,7 +1279,7 @@ export default function ChapterListSidebar({ courseInfo, topicRefs }) {
       fixed
       inset-0
 
-      z-[9999]
+      z-9999
 
       bg-black/40
 

@@ -299,7 +299,7 @@ const mathJaxConfig = {
 
                   leading-tight
 
-                  break-words
+                  wrap-break-word
                 "
               >
                 {chapter?.chapterName}
@@ -317,7 +317,7 @@ const mathJaxConfig = {
                   className="
 w-auto
 
-                    min-w-[220px]
+                    min-w-55
 
                     rounded-2xl
 
@@ -354,7 +354,7 @@ w-auto
 
 w-auto
 
-                    min-w-[220px]
+                    min-w-55
 
                     rounded-2xl
 
@@ -668,10 +668,10 @@ w-auto
 
         overflow-hidden
 
-        break-words
+        wrap-break-word
 
         prose-pre:overflow-x-auto
-        prose-code:break-words
+        prose-code:wrap-break-word
         prose-img:max-w-full
       "
     dangerouslySetInnerHTML={{

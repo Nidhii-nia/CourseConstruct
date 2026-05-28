@@ -101,8 +101,8 @@ export default function BlockRenderer({ blocks }) {
               key={index}
               className="
                 course-content prose prose-emerald dark:prose-invert
-                max-w-none break-words overflow-hidden
-                prose-pre:overflow-x-auto prose-code:break-words prose-img:max-w-full
+                max-w-none wrap-break-word overflow-hidden
+                prose-pre:overflow-x-auto prose-code:wrap-break-word prose-img:max-w-full
                 prose-table:block prose-table:overflow-x-auto prose-p:leading-8
                 prose-headings:text-emerald-700 dark:prose-headings:text-emerald-300
               "

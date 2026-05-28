@@ -70,7 +70,7 @@ export default function CoursesPage() {
 
         min-h-screen
 
-        bg-gradient-to-br
+        bg-linear-to-br
         from-emerald-50/40
         via-white
         to-blue-50/40
@@ -240,7 +240,7 @@ export default function CoursesPage() {
                 {/* TITLE + BADGES */}
                 <div className="flex flex-wrap items-center gap-2">
 
-                  <h2 className="text-lg font-semibold text-gray-800 dark:text-white break-words">
+                  <h2 className="text-lg font-semibold text-gray-800 dark:text-white wrap-break-word">
                     {course.name}
                   </h2>
 
@@ -295,7 +295,7 @@ export default function CoursesPage() {
                 </div>
 
                 {/* META */}
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 break-words">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 wrap-break-word">
                   {course.level} •{" "}
                   {course.category || "General"}
                 </p>

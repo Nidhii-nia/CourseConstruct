@@ -81,7 +81,7 @@ function ResultPage() {
 
           px-4
 
-          bg-gradient-to-br
+          bg-linear-to-br
           from-emerald-100
           via-green-50
           to-lime-100
@@ -194,7 +194,7 @@ function ResultPage() {
       className="
         min-h-screen
 
-        bg-gradient-to-br
+        bg-linear-to-br
         from-emerald-500
         via-green-50
         to-lime-300
@@ -811,7 +811,7 @@ function ResultPage() {
                             )}
 
                             {/* TEXT */}
-                            <span className="break-words">
+                            <span className="wrap-break-word">
                               {opt}
                             </span>
 

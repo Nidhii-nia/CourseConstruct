@@ -148,7 +148,7 @@ function AppSidebar() {
               w-full
               h-auto
 
-              max-w-[180px]
+              max-w-45
               sm:max-w-[220px]
 
               object-contain

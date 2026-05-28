@@ -169,7 +169,7 @@ export default function CourseDetailClient({
 
         min-h-screen
 
-        bg-gradient-to-br
+        bg-linear-to-br
         from-emerald-50/40
         via-white
         to-blue-50/40
@@ -207,7 +207,7 @@ export default function CourseDetailClient({
                 text-gray-800
                 dark:text-white
 
-                break-words
+                wrap-break-word
               "
             >
               {course.name}
@@ -245,7 +245,7 @@ export default function CourseDetailClient({
 
               mt-1
 
-              break-words
+              wrap-break-word
             "
           >
             {course.level} •{" "}
@@ -435,7 +435,7 @@ export default function CourseDetailClient({
 
                 leading-relaxed
 
-                break-words
+                wrap-break-word
               "
             >
               {description}

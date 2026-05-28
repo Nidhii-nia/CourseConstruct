@@ -215,7 +215,7 @@ function QuizPage() {
 
           px-4
 
-          bg-gradient-to-br
+          bg-linear-to-br
           from-emerald-50
           via-white
           to-blue-50
@@ -343,7 +343,7 @@ function QuizPage() {
       className="
         min-h-screen
 
-        bg-gradient-to-br
+        bg-linear-to-br
         from-green-100
         via-emerald-50
         to-green-200
@@ -728,7 +728,7 @@ function QuizPage() {
                         </div>
 
                         {/* OPTION */}
-                        <span className="break-words">
+                        <span className="wrap-break-word">
                           {opt}
                         </span>
 

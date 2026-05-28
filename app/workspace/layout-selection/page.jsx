@@ -351,7 +351,7 @@ export default function LayoutSelectionPage() {
                       text-gray-700
                       dark:text-gray-300
 
-                      break-words
+                      wrap-break-word
                     "
                   >
                     {topic}
@@ -374,7 +374,7 @@ export default function LayoutSelectionPage() {
       className="
         min-h-screen
 
-        bg-gradient-to-br
+        bg-linear-to-br
         from-emerald-100
         via-green-50
         to-lime-100
@@ -397,35 +397,6 @@ export default function LayoutSelectionPage() {
       >
         {/* HEADER */}
         <div className="text-center mb-10">
-
-          <div
-            className="
-              inline-flex
-              items-center
-
-              gap-2
-
-              rounded-full
-
-              bg-emerald-100
-              dark:bg-emerald-500/10
-
-              px-4
-              py-2
-
-              text-sm
-              font-semibold
-
-              text-emerald-700
-              dark:text-emerald-300
-
-              mb-4
-            "
-          >
-            <Sparkles size={16} />
-
-            AI Generated Layouts
-          </div>
 
           <h1
             className="
