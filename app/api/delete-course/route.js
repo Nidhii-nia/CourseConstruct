@@ -2,22 +2,44 @@ import { NextResponse } from "next/server";
 import { db } from "@/config/db";
 import { coursesTable } from "@/config/schema";
 import { eq, and } from "drizzle-orm";
-import { auth, currentUser } from "@clerk/nextjs/server";
+import {
+  auth,
+  currentUser,
+} from "@clerk/nextjs/server";
+
+export const runtime = "nodejs";
 
 export async function DELETE(req) {
   try {
-    // AUTH CHECK
-    const { userId } = await auth();
-    const user = await currentUser();
 
-    if (!userId || !user) {
+    // ==================================================
+    // 🔐 AUTH
+    // ==================================================
+
+    const { userId } = await auth();
+
+    if (!userId) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       );
     }
 
-    const { courseId } = await req.json();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    // ==================================================
+    // 📦 BODY
+    // ==================================================
+
+    const body = await req.json();
+
+    const { courseId } = body;
 
     if (!courseId) {
       return NextResponse.json(
@@ -26,7 +48,10 @@ export async function DELETE(req) {
       );
     }
 
-    // Safely extract user email (support Clerk primaryEmailAddress or emailAddresses)
+    // ==================================================
+    // 📧 USER EMAIL
+    // ==================================================
+
     const userEmail =
       user.primaryEmailAddress?.emailAddress ||
       user.emailAddresses?.[0]?.emailAddress;
@@ -38,36 +63,59 @@ export async function DELETE(req) {
       );
     }
 
-    // Only delete own course
+    // ==================================================
+    // 🚀 SOFT DELETE
+    // ==================================================
+
     const result = await db
       .update(coursesTable)
-      .set({ isDeleted: true })
+      .set({
+        isDeleted: true,
+      })
       .where(
         and(
           eq(coursesTable.cid, courseId),
           eq(coursesTable.useremail, userEmail),
           eq(coursesTable.isDeleted, false)
         )
-      );
+      )
+      .returning({
+        cid: coursesTable.cid,
+      });
 
-    // Check if any rows were actually updated
-    if (!result || result.changes === 0) {
+    // ==================================================
+    // ❌ NOT FOUND
+    // ==================================================
+
+    if (!result.length) {
       return NextResponse.json(
-        { error: "Course not found or already deleted" },
+        {
+          error:
+            "Course not found or already deleted",
+        },
         { status: 404 }
       );
     }
 
+    // ==================================================
+    // ✅ RESPONSE
+    // ==================================================
+
     return NextResponse.json({
       success: true,
       message: "Course deleted successfully",
+      cid: result[0].cid,
     });
 
   } catch (error) {
     console.error("Delete Error:", error);
 
     return NextResponse.json(
-      { error: "Failed to delete course" },
+      {
+        error:
+          error?.message ||
+          "Failed to delete course",
+      },
       { status: 500 }
     );
   }

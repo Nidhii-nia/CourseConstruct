@@ -215,7 +215,7 @@ ${trimmedContent}
       reused: false,
     });
   } catch (err) {
-    console.error("🔥 Generate Quiz Error:", err);
+    console.error(" Generate Quiz Error:", err);
 
     return NextResponse.json(
       { error: "Server error" },

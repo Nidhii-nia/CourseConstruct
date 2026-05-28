@@ -1,14 +1,18 @@
 import { db } from "@/config/db";
 import { coursesTable } from "@/config/schema";
-import { auth, currentUser } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
-import { eq, and } from "drizzle-orm";
-import { Groq } from "groq-sdk";
 
-// --------------------------------------------------
-// AI Prompt
-// --------------------------------------------------
-const PROMPT = `Genrate Learning Course depends on following details.
+import {  currentUser } from "@clerk/nextjs/server";
+
+import { NextResponse } from "next/server";
+
+import { eq, and } from "drizzle-orm";
+
+import { Groq } from "groq-sdk";
+// ======================================================
+// 🤖 AI PROMPT (UNCHANGED)
+// ======================================================
+
+const PROMPT = `Genrate Learning Course depends on following details. You should generate a description by yourself.
 In which Make sure to add Course Name, Description,Course Banner Image Prompt
 (Create a modern, flat-style 2D digital illustration representing user Topic.
 Include UI/UX elements such as mockup screens, text blocks, icons, buttons,
@@ -39,164 +43,233 @@ Schema:
 ]
 }
 }
-Rule - give 3 - 4 topics per chapter only
+Rule - give 3 topics per chapter only
 , User Input:  `;
 
-// Groq client
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+// ======================================================
+// 🚀 GROQ CLIENT
+// ======================================================
 
-// --------------------------------------------------
-// POST Handler
-// --------------------------------------------------
-export async function POST(req) {
-try {
-const formData = await req.json();
-const { clientRequestId } = formData;
-
-if (!clientRequestId) {
-  return NextResponse.json(
-    { error: "clientRequestId is required" },
-    { status: 400 }
-  );
-}
-
-if (typeof formData.includeVideo !== "boolean") {
-  formData.includeVideo = false;
-}
-
-const user = await currentUser();
-const { has } = await auth();
-
-if (!user) {
-  return NextResponse.json(
-    { error: "Unauthorized - User not logged in" },
-    { status: 401 }
-  );
-}
-
-// --------------------------------------------------
-// Check existing request
-// --------------------------------------------------
-const existing = await db
-  .select()
-  .from(coursesTable)
-  .where(
-    and(
-      eq(coursesTable.clientRequestIdContent, clientRequestId),
-      eq(coursesTable.isDeleted, false)
-    )
-  );
-
-if (existing.length > 0) {
-  return NextResponse.json({
-    success: true,
-    cid: existing[0].cid,
-    course: existing[0].courseJson,
-  });
-}
-
-// --------------------------------------------------
-// Validation
-// --------------------------------------------------
-const sanitizedName = formData.name?.trim() || "";
-const sanitizedNoOfChapters = parseInt(formData.noOfChapters ?? "0", 10);
-
-if (!sanitizedName) {
-  return NextResponse.json(
-    { success: false, error: "Course name is required" },
-    { status: 400 }
-  );
-}
-
-// --------------------------------------------------
-// Safe input
-// --------------------------------------------------
-const safeFormData = {
-  name: sanitizedName,
-  description: formData.description?.slice(0, 200) || "",
-  category: formData.category || "",
-  level: formData.level || "",
-  includeVideo: formData.includeVideo,
-  noOfChapters: sanitizedNoOfChapters,
-};
-
-// --------------------------------------------------
-// Generate layouts
-// --------------------------------------------------
-const generateWithModel = async (model) => {
-  const completion = await groq.chat.completions.create({
-    messages: [
-      {
-        role: "user",
-        content: PROMPT + JSON.stringify(safeFormData),
-      },
-    ],
-    model,
-    temperature: 1,
-    max_completion_tokens: 2000,
-  });
-
-  const raw = completion.choices[0]?.message?.content || "";
-  const match = raw.match(/\{[\s\S]*\}/);
-
-  if (!match) throw new Error("Invalid JSON from AI");
-
-  return JSON.parse(match[0]);
-};
-
-const [layoutA, layoutB] = await Promise.all([
-  generateWithModel("openai/gpt-oss-120b"),
-  generateWithModel("openai/gpt-oss-20b"),
-]);
-
-// --------------------------------------------------
-// RETURN BOTH (NO SAVE)
-// --------------------------------------------------
-return NextResponse.json({
-  success: true,
-  layouts: [
-    { id: "A", data: layoutA },
-    { id: "B", data: layoutB },
-  ],
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
 });
 
-} catch (err) {
-console.error("Internal Error:", err);
-return NextResponse.json(
-{ error: "Internal Server Error", details: err.message },
-{ status: 500 }
-);
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+// ======================================================
+// 🛡️ SAFE JSON EXTRACTOR
+// ======================================================
+
+function extractJson(text) {
+  try {
+    const match = text.match(/\{[\s\S]*\}/);
+
+    if (!match) return null;
+
+    return JSON.parse(match[0]);
+  } catch {
+    return null;
+  }
 }
+
+// ======================================================
+// ✅ VALIDATE COURSE STRUCTURE
+// ======================================================
+
+function isValidCourse(course) {
+  return course && course.course && Array.isArray(course.course.chapters);
 }
 
+// ======================================================
+// 🔁 RETRY MODEL GENERATION
+// ======================================================
 
-// // --------------------------------------------------
-// // HuggingFace Image Generation
-// // --------------------------------------------------
-// const GenerateImage = async (prompt) => {
-//   try {
-//     const hf = new InferenceClient(process.env.HF_TOKEN);
-//     const response = await hf.textToImage({
-//       model: "stabilityai/stable-diffusion-xl-base-1.0",
-//       inputs: prompt,
-//       parameters: { width: 768, height: 432, num_inference_steps: 30 },
-//     });
+async function generateWithRetry(model, safeFormData, retries = 3) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const completion = await groq.chat.completions.create({
+        messages: [
+          {
+            role: "user",
+            content: PROMPT + JSON.stringify(safeFormData),
+          },
+        ],
 
-//     if (response?.blob) {
-//       const buffer = Buffer.from(await response.blob());
-//       return `data:image/png;base64,${buffer.toString("base64")}`;
-//     } else if (response?.arrayBuffer) {
-//       const buffer = Buffer.from(await response.arrayBuffer());
-//       return `data:image/png;base64,${buffer.toString("base64")}`;
-//     } else if (response instanceof Buffer) {
-//       return `data:image/png;base64,${response.toString("base64")}`;
-//     } else {
-//       return response?.base64
-//         ? `data:image/png;base64,${response.base64}`
-//         : "/books.png";
-//     }
-//   } catch (err) {
-//     console.error("Image generation failed for prompt:", prompt, err);
-//     return "/books.png";
-//   }
-// };
+        model,
+
+        temperature: 0.8,
+
+        max_completion_tokens: 2200,
+      });
+
+      const raw = completion.choices?.[0]?.message?.content || "";
+
+      console.log(`🧠 ${model} Attempt ${attempt}`);
+
+      const parsed = extractJson(raw);
+
+      if (isValidCourse(parsed)) {
+        return parsed;
+      }
+
+      console.warn(`⚠️ Invalid JSON from ${model}`);
+    } catch (err) {
+      console.error(`❌ ${model} Retry ${attempt} failed`, err.message);
+    }
+
+    // ⏳ SMALL BACKOFF
+    await new Promise((resolve) => setTimeout(resolve, 1500 * attempt));
+  }
+
+  throw new Error(`Failed after retries for model: ${model}`);
+}
+
+// ======================================================
+// 🚀 POST
+// ======================================================
+
+export async function POST(req) {
+  try {
+    // ==================================================
+    // 📦 BODY
+    // ==================================================
+
+    const formData = await req.json();
+
+    const { clientRequestId } = formData;
+
+    if (!clientRequestId) {
+      return NextResponse.json(
+        {
+          error: "clientRequestId is required",
+        },
+        { status: 400 },
+      );
+    }
+
+    // ==================================================
+    // 🔐 AUTH
+    // ==================================================
+
+    const user = await currentUser();
+
+
+    if (!user) {
+      return NextResponse.json(
+        {
+          error: "Unauthorized - User not logged in",
+        },
+        { status: 401 },
+      );
+    }
+
+    // ==================================================
+    // 🔄 EXISTING REQUEST CHECK
+    // ==================================================
+
+    const existing = await db
+      .select({
+        cid: coursesTable.cid,
+        courseJson: coursesTable.courseJson,
+      })
+      .from(coursesTable)
+      .where(
+        and(
+          eq(coursesTable.clientRequestIdContent, clientRequestId),
+
+          eq(coursesTable.isDeleted, false),
+        ),
+      )
+      .limit(1);
+
+    if (existing.length > 0) {
+      return NextResponse.json({
+        success: true,
+        cid: existing[0].cid,
+        course: existing[0].courseJson,
+      });
+    }
+
+    // ==================================================
+    // ✅ VALIDATION
+    // ==================================================
+
+    const sanitizedName = formData.name?.trim() || "";
+
+    const sanitizedNoOfChapters = parseInt(formData.noOfChapters ?? "0", 10);
+
+    if (!sanitizedName) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Course name is required",
+        },
+        { status: 400 },
+      );
+    }
+
+    // ==================================================
+    // 🛡️ SAFE INPUT
+    // ==================================================
+
+    const safeFormData = {
+      name: sanitizedName,
+
+      description: formData.description?.slice(0, 200) || "",
+
+      category: formData.category || "",
+
+      level: formData.level || "",
+
+      includeVideo:
+        typeof formData.includeVideo === "boolean"
+          ? formData.includeVideo
+          : false,
+
+      noOfChapters: sanitizedNoOfChapters,
+    };
+
+    // ==================================================
+    // 🤖 GENERATE BOTH LAYOUTS
+    // ==================================================
+
+    const [layoutA, layoutB] = await Promise.all([
+      generateWithRetry("openai/gpt-oss-120b", safeFormData),
+
+      generateWithRetry("openai/gpt-oss-20b", safeFormData),
+    ]);
+
+    // ==================================================
+    // ✅ RESPONSE
+    // ==================================================
+
+    return NextResponse.json({
+      success: true,
+
+      layouts: [
+        {
+          id: "A",
+          data: layoutA,
+        },
+
+        {
+          id: "B",
+          data: layoutB,
+        },
+      ],
+    });
+  } catch (err) {
+    console.error("Internal Error:", err);
+
+    return NextResponse.json(
+      {
+        error: "Internal Server Error",
+
+        details: err?.message || "Unknown error",
+      },
+
+      { status: 500 },
+    );
+  }
+}

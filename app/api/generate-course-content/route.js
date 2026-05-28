@@ -5,109 +5,476 @@ import { coursesTable } from "@/config/schema";
 import { eq } from "drizzle-orm";
 import { Groq } from "groq-sdk";
 
-// Initialize Groq client
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+// ======================================================
+//  GROQ CLIENT
+// ======================================================
 
-// PROMPT (unchanged)
-const PROMPT = `
-Generate detailed HTML content for each topic for students or scholars so they could read and understand topics deeply keep it professional like textbooks with examples where required like questions and there answers for understanding.
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
+});
 
-Output ONLY valid JSON in this exact format:
+// ======================================================
+//  PROMPT
+// ======================================================
+
+const TOPIC_PROMPT = `
+You are an expert textbook author.
+
+Return ONLY valid JSON:
 
 {
-  "chapterName": "",
-  "topics": [
-    {
-      "topic": "",
-      "content": ""
-    }
-  ]
+"topic": "",
+"content": "<div>HTML</div>"
 }
 
-CRITICAL RULES:
-- Output MUST be strictly valid JSON
-- Do NOT include any text before or after JSON
-- Do NOT include \`\`\`
-- Ensure all keys use double quotes
-- Ensure JSON.parse() works without errors
+Write detailed educational HTML content for students.
 
-Rules:
-- Do NOT add duration
-- Do NOT add extra keys
-- Only return JSON
-- "content" must be valid HTML wrapped in a single <div> ... </div>
+Requirements:
 
-User Input:
+* Textbook-quality explanation
+* Give review questions with answer
+* Deep conceptual clarity
+* Include examples and applications
+* Include formulas if needed
+* Use headings, lists, tables where useful
+* Avoid filler and repetition
+* Complete all explanations fully
+* Keep HTML clean and semantic
+* One root <div>
+- Be concise but complete
+
+Math format:
+Inline: \( ... \)
+Block: \[ ... \]
+
+Topic:
 `;
 
-// SAFE JSON PARSER
+// ======================================================
+//  DELAY
+// ======================================================
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// ======================================================
+//  CLEAN MATH CONTENT
+// ======================================================
+
+function cleanMathContent(content) {
+  if (!content) return content;
+  
+  return content
+    // Fix common LaTeX escaping issues
+    .replace(/\\\(/g, '\\(')
+    .replace(/\\\)/g, '\\)')
+    .replace(/\\\[/g, '\\[')
+    .replace(/\\\]/g, '\\]')
+    // Ensure proper spacing around math delimiters
+    .replace(/([^\\])\\(\[|\()/g, '$1 \\$2')
+    .replace(/(\\\]|\\\))([^\\])/g, '$1 $2')
+    // Fix double-escaped display math
+    .replace(/\\\\\\\[/g, '\\[')
+    .replace(/\\\\\\\]/g, '\\]')
+    // Fix cases where $ is escaped
+    .replace(/\\\$/g, '$')
+    // Fix inconsistent display math formatting
+    .replace(/\$\$\s*\n\s*([\s\S]*?)\s*\n\s*\$\$/g, (_, math) => {
+      return `$$\n${math.trim()}\n$$`;
+    })
+    // Convert \displaystyle to proper display math
+    .replace(/\\displaystyle/g, '');
+}
+
+// ======================================================
+//  SAFE JSON PARSER
+// ======================================================
+
 function safeJsonParse(text) {
   try {
     return JSON.parse(text);
   } catch (e) {
-    console.warn("JSON parse failed, attempting fix...");
-
     try {
       let fixed = text
         .replace(/```json|```/g, "")
         .replace(/(\r\n|\n|\r)/gm, " ")
         .replace(/,\s*}/g, "}")
-        .replace(/,\s*]/g, "]");
+        .replace(/,\s*]/g, "]")
+        .trim();
 
       return JSON.parse(fixed);
-    } catch {
+    } catch (err) {
+      console.error(" JSON Parse Failed:", err);
       return null;
     }
   }
 }
 
-// NEW: Extract JSON safely
+// ======================================================
+//  EXTRACT JSON
+// ======================================================
+
 function extractJson(text) {
   try {
-    const match = text.match(/\{[\s\S]*\}/);
-    if (!match) return null;
-    return safeJsonParse(match[0]);
-  } catch {
+    const cleaned = text
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
+
+    const firstBrace = cleaned.indexOf("{");
+    const lastBrace = cleaned.lastIndexOf("}");
+
+    if (firstBrace === -1 || lastBrace === -1) {
+      return null;
+    }
+
+    const jsonString = cleaned.slice(firstBrace, lastBrace + 1);
+
+    return safeJsonParse(jsonString);
+  } catch (e) {
+    console.error(" Extract JSON Error:", e);
     return null;
   }
 }
 
-// Retry helper (ONLY token change)
-async function generateWithRetry(messages, retries = 2) {
-  try {
-    return await groq.chat.completions.create({
+// ======================================================
+//  VALIDATION
+// ======================================================
+
+function isValidTopicResponse(parsed) {
+  return (
+    parsed &&
+    typeof parsed === "object" &&
+    typeof parsed.topic === "string" &&
+    typeof parsed.content === "string" &&
+    parsed.content.includes("<div")
+  );
+}
+
+// ======================================================
+//  TIMEOUT WRAPPER
+// ======================================================
+
+function withTimeout(promise, ms = 45000) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Request timeout")), ms),
+    ),
+  ]);
+}
+
+// ======================================================
+//  GENERATE SINGLE TOPIC
+// ======================================================
+
+async function generateTopic(topicName, chapterName, courseTitle) {
+  const messages = [
+    {
+      role: "user",
+      content:
+        TOPIC_PROMPT +
+        JSON.stringify({
+          courseTitle,
+          chapterName,
+          topic: topicName,
+        }),
+    },
+  ];
+
+  const completion = await withTimeout(
+    groq.chat.completions.create({
       messages,
+
       model: "openai/gpt-oss-120b",
-      temperature: 1,
-      max_completion_tokens: 7000, // increased slightly
+
+      temperature: 0.4,
+
+      max_completion_tokens: 3500,
+
+      top_p: 1,
+    }),
+    45000,
+  );
+
+  const raw = completion?.choices?.[0]?.message?.content || "";
+
+  console.log(` RAW TOPIC RESPONSE (${topicName}):`, raw);
+
+  // ======================================================
+  //  TRUNCATION CHECK
+  // ======================================================
+
+  const parsed = extractJson(raw);
+
+  if (!parsed) {
+    console.warn(` Invalid or truncated JSON`);
+    return null;
+  }
+
+  return parsed;
+}
+
+// ======================================================
+//  RETRY GENERATION
+// ======================================================
+
+async function generateTopicWithRetry(
+  topicName,
+  chapterName,
+  courseTitle,
+  maxRetries = 3,
+) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(` Generating Topic: ${topicName} | Attempt ${attempt}`);
+
+      const parsed = await generateTopic(topicName, chapterName, courseTitle);
+
+      // ======================================================
+      //  VALID RESPONSE
+      // ======================================================
+
+      if (isValidTopicResponse(parsed)) {
+        // ✅ APPLY MATH CLEANING BEFORE RETURNING
+        return {
+          topic: parsed.topic,
+          content: cleanMathContent(parsed.content),
+        };
+      }
+
+      console.warn(` Invalid AI response for topic: ${topicName}`);
+    } catch (error) {
+      console.error(
+        ` Retry ${attempt} failed for topic: ${topicName}`,
+        error.message,
+      );
+    }
+
+    // ======================================================
+    //  BACKOFF
+    // ======================================================
+
+    await delay(4000 * attempt);
+  }
+
+  // ======================================================
+  // 🚨 LAST ATTEMPT FALLBACK
+  // ======================================================
+
+  try {
+    console.log(` Final recovery attempt for: ${topicName}`);
+
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "user",
+          content:
+            TOPIC_PROMPT +
+            JSON.stringify({
+              courseTitle,
+              chapterName,
+              topic: topicName,
+            }),
+        },
+      ],
+
+      model: "openai/gpt-oss-120b",
+
+      temperature: 0.3,
+
+      max_completion_tokens: 4000,
+
       top_p: 1,
     });
-  } catch (error) {
-    if (retries > 0) {
-      console.warn("Retrying with lower tokens...");
-      return await groq.chat.completions.create({
-        messages,
-        model: "openai/gpt-oss-120b",
-        temperature: 1,
-        max_completion_tokens: 8000,
-        top_p: 1,
-      });
+
+    const raw = completion?.choices?.[0]?.message?.content || "";
+
+    const parsed = extractJson(raw);
+
+    if (isValidTopicResponse(parsed)) {
+      // ✅ APPLY MATH CLEANING TO FALLBACK CONTENT
+      return {
+        topic: parsed.topic,
+        content: cleanMathContent(parsed.content),
+      };
     }
-    throw error;
+  } catch (err) {
+    console.error(" Final recovery failed:", err.message);
+  }
+
+  // ======================================================
+  //  NO FAILED CONTENT
+  // ======================================================
+
+  return {
+    topic: topicName,
+
+    content: `
+      <div>
+        <h2>${topicName}</h2>
+        <p>
+          Detailed educational content for this topic is currently being generated.
+        </p>
+      </div>
+    `,
+  };
+}
+
+// ======================================================
+//  YOUTUBE FUNCTION
+// ======================================================
+
+async function GetYoutubeVideo(topic, courseName, maxPerChapter = 4) {
+  if (!process.env.YOUTUBE_API_KEY) {
+    return {
+      videos: [],
+      playlists: [],
+    };
+  }
+
+  const query = `     ${topic} ${courseName}
+    full course lecture tutorial university
+  `.trim();
+
+  try {
+    // ======================================================
+    // FETCH VIDEOS + PLAYLISTS
+    // ======================================================
+
+    const [videoResponse, playlistResponse] = await Promise.all([
+      axios.get("https://www.googleapis.com/youtube/v3/search", {
+        params: {
+          part: "snippet",
+          q: query,
+          maxResults: 10,
+          type: "video",
+          videoDuration: "medium",
+          relevanceLanguage: "en",
+          order: "relevance",
+          safeSearch: "strict",
+          key: process.env.YOUTUBE_API_KEY,
+        },
+      }),
+
+      axios.get("https://www.googleapis.com/youtube/v3/search", {
+        params: {
+          part: "snippet",
+          q: query,
+          maxResults: 5,
+          type: "playlist",
+          relevanceLanguage: "en",
+          order: "relevance",
+          safeSearch: "strict",
+          key: process.env.YOUTUBE_API_KEY,
+        },
+      }),
+    ]);
+
+    // ======================================================
+    // FILTER LOW QUALITY CONTENT
+    // ======================================================
+
+    const blockedWords = [
+      "short",
+      "#shorts",
+      "reel",
+      "status",
+      "clip",
+      "trailer",
+      "meme",
+      "edit",
+    ];
+
+    const cleanVideos = (videoResponse?.data?.items || []).filter((item) => {
+      const title = item?.snippet?.title?.toLowerCase() || "";
+
+      return !blockedWords.some((word) => title.includes(word));
+    });
+
+    // ======================================================
+    // FORMAT VIDEOS
+    // ======================================================
+
+    const videos = cleanVideos.slice(0, maxPerChapter).map((item) => ({
+      type: "video",
+      videoId: item?.id?.videoId || "",
+      title: item?.snippet?.title || "Untitled Video",
+      thumbnail:
+        item?.snippet?.thumbnails?.high?.url ||
+        item?.snippet?.thumbnails?.medium?.url ||
+        "",
+      channelTitle: item?.snippet?.channelTitle || "Unknown Channel",
+    }));
+
+    // ======================================================
+    // FORMAT PLAYLISTS
+    // ======================================================
+
+    const playlists = (playlistResponse?.data?.items || [])
+      .filter((item) => {
+        const title = item?.snippet?.title?.toLowerCase() || "";
+
+        return !blockedWords.some((word) => title.includes(word));
+      })
+      .map((item) => ({
+        type: "playlist",
+        playlistId: item?.id?.playlistId || "",
+        title: item?.snippet?.title || "Untitled Playlist",
+        thumbnail:
+          item?.snippet?.thumbnails?.high?.url ||
+          item?.snippet?.thumbnails?.medium?.url ||
+          "",
+        channelTitle: item?.snippet?.channelTitle || "Unknown Channel",
+      }));
+
+    // ======================================================
+    // RETURN DATA
+    // ======================================================
+
+    return {
+      videos,
+      playlists,
+    };
+  } catch (err) {
+    console.error(
+      " YouTube fetch error:",
+      err?.response?.data || err?.message || err,
+    );
+
+    return {
+      videos: [],
+      playlists: [],
+    };
   }
 }
 
+// ======================================================
+//  API
+// ======================================================
+
 export async function POST(req) {
   try {
-    const { courseJson, courseTitle, courseId, clientRequestId } =
+    const { courseJson, courseTitle, courseId, clientRequestId, includeVideo } =
       await req.json();
+
+    // ======================================================
+    //  VALIDATION
+    // ======================================================
 
     if (!courseId || !clientRequestId || !courseJson?.chapters) {
       return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
+        {
+          error: "Missing required fields",
+        },
+        { status: 400 },
       );
     }
+
+    // ======================================================
+    //  DUPLICATE REQUEST CHECK
+    // ======================================================
 
     const existing = await db
       .select()
@@ -116,170 +483,131 @@ export async function POST(req) {
 
     if (existing.length > 0) {
       return NextResponse.json({
+        success: true,
+        cached: true,
         courseName: courseTitle,
         CourseContent: existing[0].courseContent,
       });
     }
 
+    // ======================================================
+    // 📦 OUTPUT
+    // ======================================================
+
     const output = [];
 
-    // 🔥 CHAPTER LOOP
+    // ======================================================
+    // 📚 CHAPTER LOOP
+    // ======================================================
+
     for (const chapter of courseJson.chapters) {
-      try {
-        const messages = [
-          {
-            role: "user",
-            content:
-              PROMPT +
-              JSON.stringify({
-                chapterName: chapter.chapterName,
-                topics: chapter.topics.slice(0, 3), // LIMIT FIX
-              }),
-          },
-        ];
+      console.log(` Processing Chapter: ${chapter.chapterName}`);
 
-        const chatCompletion = await generateWithRetry(messages);
+      const generatedTopics = [];
 
-        const raw =
-          chatCompletion.choices?.[0]?.message?.content || "";
+      // ======================================================
+      //  TOPIC LOOP
+      // ======================================================
 
-        console.log("RAW AI OUTPUT:", raw);
+      for (const topicItem of chapter.topics || []) {
+        const topicName =
+          typeof topicItem === "string"
+            ? topicItem
+            : topicItem?.topic || "Untitled Topic";
 
-        // SAFE PARSE
-        let parsed = extractJson(raw);
+        // ======================================================
+        //  TOPIC-WISE RETRY GENERATION
+        // ======================================================
 
-        // NO THROW — SAFE FALLBACK
-        if (!parsed || !parsed.topics) {
-          console.warn("Invalid AI response, using fallback");
-
-          parsed = {
-            chapterName: chapter.chapterName,
-            topics: chapter.topics.map((t) => ({
-              topic: t.topic,
-              content:
-                "<div><p>Content generation failed. Retry recommended.</p></div>",
-            })),
-          };
-        }
-
-        const youtubeVideo = await GetYoutubeVideo(
+        const generated = await generateTopicWithRetry(
+          topicName,
           chapter.chapterName,
-          courseJson?.course?.name,
-          4
+          courseTitle,
         );
 
-        output.push({
-          youtubeVideo,
-          courseData: parsed,
+        generatedTopics.push({
+          topic: generated.topic,
+          content: generated.content,
         });
 
-        await new Promise((r) => setTimeout(r, 12000));
+        // ======================================================
+        //  SMALL DELAY
+        // ======================================================
 
-      } catch (err) {
-        console.error("Chapter error:", chapter.chapterName, err);
-
-        output.push({
-          youtubeVideo: [],
-          courseData: {
-            chapterName: chapter.chapterName,
-            topics: chapter.topics.map((t) => ({
-              topic: t.topic,
-              content:
-                "<div><p>Failed to generate content.</p></div>",
-            })),
-          },
-        });
+        await delay(500);
       }
+
+      // ======================================================
+      //  OPTIONAL YOUTUBE
+      // ======================================================
+
+      let youtubeContent = {
+        videos: [],
+        playlists: [],
+      };
+
+      if (includeVideo === true) {
+        youtubeContent = await GetYoutubeVideo(
+          chapter.chapterName,
+          courseTitle,
+          4,
+        );
+      }
+
+      // ======================================================
+      // 📦 PUSH CHAPTER
+      // ======================================================
+
+      output.push({
+        youtubeContent,
+
+        courseData: {
+          chapterName: chapter.chapterName,
+
+          topics: generatedTopics,
+        },
+      });
+
+      // ======================================================
+      //  CHAPTER DELAY
+      // ======================================================
+
+      await delay(500);
     }
+
+    // ======================================================
+    // 💾 SAVE TO DB
+    // ======================================================
 
     await db
       .update(coursesTable)
       .set({
         courseContent: output,
+
         hasContent: true,
+
         clientRequestIdContent: clientRequestId,
       })
       .where(eq(coursesTable.cid, courseId));
 
+    // ======================================================
+    //  RESPONSE
+    // ======================================================
+
     return NextResponse.json({
       success: true,
       courseName: courseTitle,
+      chaptersGenerated: output.length,
     });
-
   } catch (error) {
-    console.error("API Error:", error);
+    console.error(" API Error:", error);
 
     return NextResponse.json(
       {
         error: "Internal server error",
         message: error.message,
       },
-      { status: 500 }
+      { status: 500 },
     );
-  }
-}
-
-// ================= YOUTUBE FUNCTION =================
-async function GetYoutubeVideo(topic, courseName, maxPerChapter) {
-  if (!process.env.YOUTUBE_API_KEY) return [];
-
-  const baseQuery = `${topic} ${courseName} tutorial lecture explained`;
-
-  try {
-    const response = await axios.get(
-      "https://www.googleapis.com/youtube/v3/search",
-      {
-        params: {
-          part: "snippet",
-          q: baseQuery,
-          maxResults: 8,
-          type: "video",
-          videoDuration: "medium",
-          relevanceLanguage: "en",
-          safeSearch: "strict",
-          key: process.env.YOUTUBE_API_KEY,
-        },
-      }
-    );
-
-    let videos = (response.data.items || []).filter((item) => {
-      const title = item.snippet?.title?.toLowerCase() || "";
-
-      return (
-        !title.includes("short") &&
-        !title.includes("reel") &&
-        !title.includes("status") &&
-        !title.includes("clip") &&
-        !title.includes("#shorts") &&
-        !title.includes("trailer")
-      );
-    });
-
-    if (videos.length === 0) {
-      const fallback = await axios.get(
-        "https://www.googleapis.com/youtube/v3/search",
-        {
-          params: {
-            part: "snippet",
-            q: `${topic} explained`,
-            maxResults: 6,
-            type: "video",
-            videoDuration: "medium",
-            key: process.env.YOUTUBE_API_KEY,
-          },
-        }
-      );
-
-      videos = fallback.data.items || [];
-    }
-
-    return videos.slice(0, maxPerChapter || 4).map((item) => ({
-      videoId: item.id?.videoId,
-      title: item.snippet?.title,
-    }));
-
-  } catch (err) {
-    console.error("YouTube fetch error:", err);
-    return [];
   }
 }

@@ -1,34 +1,76 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import * as DialogPrimitive from "@radix-ui/react-dialog"
-import { XIcon } from "lucide-react"
+import * as React from "react";
 
-import { cn } from "@/lib/utils"
+import * as DialogPrimitive from "@radix-ui/react-dialog";
+
+import { XIcon } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+
+/* =========================================
+   ROOT
+========================================= */
 
 function Dialog({
   ...props
 }) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />;
+  return (
+    <DialogPrimitive.Root
+      data-slot="dialog"
+      {...props}
+    />
+  );
 }
+
+/* =========================================
+   TRIGGER
+========================================= */
 
 function DialogTrigger({
   ...props
 }) {
-  return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />;
+  return (
+    <DialogPrimitive.Trigger
+      data-slot="dialog-trigger"
+      {...props}
+    />
+  );
 }
+
+/* =========================================
+   PORTAL
+========================================= */
 
 function DialogPortal({
   ...props
 }) {
-  return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />;
+  return (
+    <DialogPrimitive.Portal
+      data-slot="dialog-portal"
+      {...props}
+    />
+  );
 }
+
+/* =========================================
+   CLOSE
+========================================= */
 
 function DialogClose({
   ...props
 }) {
-  return <DialogPrimitive.Close data-slot="dialog-close" {...props} />;
+  return (
+    <DialogPrimitive.Close
+      data-slot="dialog-close"
+      {...props}
+    />
+  );
 }
+
+/* =========================================
+   OVERLAY
+========================================= */
 
 function DialogOverlay({
   className,
@@ -38,12 +80,31 @@ function DialogOverlay({
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
       className={cn(
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50",
+        `
+          fixed
+          inset-0
+          z-50
+
+          bg-black/50
+
+          backdrop-blur-sm
+
+          data-[state=open]:animate-in
+          data-[state=closed]:animate-out
+
+          data-[state=open]:fade-in-0
+          data-[state=closed]:fade-out-0
+        `,
         className
       )}
-      {...props} />
+      {...props}
+    />
   );
 }
+
+/* =========================================
+   CONTENT
+========================================= */
 
 function DialogContent({
   className,
@@ -53,27 +114,113 @@ function DialogContent({
 }) {
   return (
     <DialogPortal data-slot="dialog-portal">
+
       <DialogOverlay />
+
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg",
+          `
+            fixed
+            left-1/2
+            top-1/2
+            z-50
+
+            w-[95vw]
+            max-w-[95vw]
+
+            translate-x-[-50%]
+            translate-y-[-50%]
+
+            rounded-3xl
+
+            border
+            border-gray-200
+            dark:border-gray-700
+
+            bg-white
+            dark:bg-gray-950
+
+            shadow-2xl
+
+            p-5
+            sm:p-7
+
+            grid
+            gap-5
+
+            overflow-hidden
+
+            duration-200
+
+            data-[state=open]:animate-in
+            data-[state=closed]:animate-out
+
+            data-[state=open]:fade-in-0
+            data-[state=closed]:fade-out-0
+
+            data-[state=open]:zoom-in-95
+            data-[state=closed]:zoom-out-95
+
+            sm:max-w-lg
+            md:max-w-xl
+          `,
           className
         )}
-        {...props}>
+        {...props}
+      >
         {children}
+
+        {/* CLOSE BUTTON */}
         {showCloseButton && (
+
           <DialogPrimitive.Close
             data-slot="dialog-close"
-            className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
-            <XIcon />
-            <span className="sr-only">Close</span>
+            className="
+              absolute
+              right-4
+              top-4
+
+              inline-flex
+              items-center
+              justify-center
+
+              rounded-xl
+
+              p-2
+
+              text-gray-500
+              dark:text-gray-400
+
+              transition-all
+
+              hover:bg-gray-100
+              dark:hover:bg-gray-800
+
+              hover:text-gray-800
+              dark:hover:text-white
+
+              focus:outline-none
+              focus:ring-2
+              focus:ring-emerald-500/40
+            "
+          >
+            <XIcon className="h-5 w-5" />
+
+            <span className="sr-only">
+              Close
+            </span>
+
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Content>
     </DialogPortal>
   );
 }
+
+/* =========================================
+   HEADER
+========================================= */
 
 function DialogHeader({
   className,
@@ -82,10 +229,26 @@ function DialogHeader({
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-2 text-center sm:text-left", className)}
-      {...props} />
+      className={cn(
+        `
+          flex
+          flex-col
+
+          gap-2
+
+          text-center
+          sm:text-left
+        `,
+        className
+      )}
+      {...props}
+    />
   );
 }
+
+/* =========================================
+   FOOTER
+========================================= */
 
 function DialogFooter({
   className,
@@ -94,10 +257,26 @@ function DialogFooter({
   return (
     <div
       data-slot="dialog-footer"
-      className={cn("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", className)}
-      {...props} />
+      className={cn(
+        `
+          flex
+          flex-col-reverse
+          sm:flex-row
+
+          gap-3
+
+          sm:justify-end
+        `,
+        className
+      )}
+      {...props}
+    />
   );
 }
+
+/* =========================================
+   TITLE
+========================================= */
 
 function DialogTitle({
   className,
@@ -106,10 +285,26 @@ function DialogTitle({
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn("text-lg leading-none font-semibold", className)}
-      {...props} />
+      className={cn(
+        `
+          text-xl
+          font-bold
+
+          tracking-tight
+
+          text-gray-900
+          dark:text-white
+        `,
+        className
+      )}
+      {...props}
+    />
   );
 }
+
+/* =========================================
+   DESCRIPTION
+========================================= */
 
 function DialogDescription({
   className,
@@ -118,10 +313,25 @@ function DialogDescription({
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
-      className={cn("text-muted-foreground text-sm", className)}
-      {...props} />
+      className={cn(
+        `
+          text-sm
+
+          leading-relaxed
+
+          text-gray-500
+          dark:text-gray-400
+        `,
+        className
+      )}
+      {...props}
+    />
   );
 }
+
+/* =========================================
+   EXPORTS
+========================================= */
 
 export {
   Dialog,
@@ -134,4 +344,4 @@ export {
   DialogPortal,
   DialogTitle,
   DialogTrigger,
-}
+};

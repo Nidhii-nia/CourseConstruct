@@ -28,10 +28,22 @@ export async function POST(req) {
     // Return existing user if found
     return NextResponse.json(users[0], { status: 200 });
 
-  } catch (error) {
-    console.error("❌ Error in /api/user:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+} catch (error) {
+console.error(
+"❌ FULL DATABASE ERROR:",
+error
+);
+
+return NextResponse.json(
+{
+error:
+error?.message ||
+"Internal Server Error",
+},
+{ status: 500 }
+);
+}
+
 }
 
 // Optional: Handle unsupported methods gracefully

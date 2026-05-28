@@ -1,13 +1,18 @@
 "use client";
+
 import React, { useContext, useState, useMemo, useEffect } from "react";
+
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+
 import { SelectedChapterIndexContext } from "@/context/SelectedChapterIndexContext";
+
 import { useSidebar } from "@/context/SidebarContext";
+
 import {
   CheckCircle,
   ChevronLeft,
@@ -17,16 +22,22 @@ import {
   BookOpen,
   ArrowLeft,
   Loader2,
+  Download,
 } from "lucide-react";
+
 import Link from "next/link";
+
 import axios from "axios";
+
 import { useUser } from "@clerk/nextjs";
-import { Download } from "lucide-react";
+
 import FeedbackDialog from "./FeedbackDialogue";
 
 export default function ChapterListSidebar({ courseInfo, topicRefs }) {
   const { user } = useUser();
+
   const [startingQuiz, setStartingQuiz] = useState(false);
+
   const courseContent = useMemo(
     () => courseInfo?.courses?.courseContent,
     [courseInfo],
@@ -35,15 +46,18 @@ export default function ChapterListSidebar({ courseInfo, topicRefs }) {
   const { selectedChapterIndex, setSelectedChapterIndex } = useContext(
     SelectedChapterIndexContext,
   );
+
   const [showFeedback, setShowFeedback] = useState(false);
 
   const { enrollCourse } = courseInfo ?? {};
+
   const completedChapters = useMemo(
     () => enrollCourse?.completedChapters ?? [],
     [enrollCourse],
   );
 
   const totalChapters = courseContent?.length || 0;
+
   const completedCount = completedChapters.length;
 
   const isCourseCompleted =
@@ -51,41 +65,45 @@ export default function ChapterListSidebar({ courseInfo, topicRefs }) {
 
   const cid = courseInfo?.cid || courseInfo?.courses?.cid;
 
-    console.log({
-    totalChapters,
-    completedCount,
-    isCourseCompleted,
-    cid,
-  });
+  useEffect(() => {
+    if (!courseContent || courseContent.length === 0) return;
 
-useEffect(() => {
-  if (!courseContent || courseContent.length === 0) return;
+    if (isCourseCompleted && cid) {
+      setShowFeedback(true);
+    }
+  }, [isCourseCompleted, cid, courseContent]);
 
-  if (isCourseCompleted && cid) {
-    setShowFeedback(true);
-  }
-}, [isCourseCompleted, cid, courseContent]);
+  /* =========================
+     SIDEBAR STATE
+  ========================= */
 
-  // Use the sidebar context
   const { isCollapsed, setIsCollapsed } = useSidebar();
+
   const [isMobile, setIsMobile] = useState(false);
 
-  // Check if mobile on mount and resize
+  /* =========================
+     MOBILE CHECK
+  ========================= */
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
 
     checkMobile();
+
     window.addEventListener("resize", checkMobile);
 
-    // Auto-collapse on mobile
     if (isMobile) {
       setIsCollapsed(true);
     }
 
     return () => window.removeEventListener("resize", checkMobile);
   }, [isMobile, setIsCollapsed]);
+
+  /* =========================
+     TOPIC CLICK
+  ========================= */
 
   const handleTopicClick = (index) => {
     if (topicRefs?.current?.[index]) {
@@ -96,59 +114,77 @@ useEffect(() => {
     }
   };
 
-  // Calculate chapter progress percentage
+  /* =========================
+     PROGRESS
+  ========================= */
+
   const calculateChapterProgress = (chapterIndex) => {
     const chapter = courseContent?.[chapterIndex];
+
     const totalTopics = chapter?.courseData?.topics?.length || 0;
+
     const completedTopics =
       enrollCourse?.completedTopics?.[chapterIndex]?.length || 0;
+
     return totalTopics > 0
       ? Math.round((completedTopics / totalTopics) * 100)
       : 0;
   };
+
+  /* =========================
+     EXPORT PDF
+  ========================= */
 
   const handleExportPDF = () => {
     const content = document.getElementById("full-course-pdf");
 
     if (!content) {
       alert("Content not found");
+
       return;
     }
 
     const printWindow = window.open("", "_blank");
 
     printWindow.document.write(`
-    <html>
-      <head>
-        <title>Course PDF</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            color: #000;
-            background: #fff;
-          }
-          h1, h2 {
-            margin-bottom: 10px;
-          }
-          div {
-            margin-bottom: 10px;
-          }
-        </style>
-      </head>
-      <body>
-        ${content.innerHTML}
-      </body>
-    </html>
-  `);
+      <html>
+        <head>
+          <title>Course PDF</title>
+
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              padding: 20px;
+              color: #000;
+              background: #fff;
+            }
+
+            h1, h2 {
+              margin-bottom: 10px;
+            }
+
+            div {
+              margin-bottom: 10px;
+            }
+          </style>
+        </head>
+
+        <body>
+          ${content.innerHTML}
+        </body>
+      </html>
+    `);
 
     printWindow.document.close();
 
     printWindow.focus();
 
-    // trigger print → user can save as PDF
     printWindow.print();
   };
+
+  /* =========================
+   START QUIZ
+========================= */
 
   const handleStartQuiz = async () => {
     const cid = courseInfo?.cid || courseInfo?.courses?.cid;
@@ -159,111 +195,255 @@ useEffect(() => {
 
     if (!cid || !email) {
       alert("User or course not loaded yet");
+
       return;
     }
 
     try {
-      setStartingQuiz(true); // show loader
+      setStartingQuiz(true);
 
       const res = await axios.post("/api/quiz/generate-quiz", {
         cid,
         useremail: email,
       });
 
-      window.location.href = `/quiz/${res.data.quizId}`;
+      /* SMOOTH REDIRECT */
+      setTimeout(() => {
+        window.location.assign(`/quiz/${res.data.quizId}`);
+      }, 400);
     } catch (err) {
       setStartingQuiz(false);
+
       console.log(err);
+
       alert("Failed to start quiz");
     }
   };
 
-  
+  /* =========================
+     LOADING
+  ========================= */
 
-  if (startingQuiz) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-linear-to-br from-emerald-100 to-blue-100">
-        <div className="flex flex-col items-center gap-6 p-10 bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-emerald-200">
-          <Loader2 className="w-16 h-16 text-emerald-600 animate-spin" />
-
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-emerald-700">
-              Starting Quiz...
-            </h2>
-            <p className="text-gray-500 text-sm">Preparing your questions</p>
-          </div>
-
-          <div className="flex gap-2">
-            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce"></span>
-            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce delay-150"></span>
-            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce delay-300"></span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  // Loading state
   if (!courseContent) {
     return (
-      <div className="fixed top-0 left-0 w-80 p-6 border-r border-emerald-200 h-screen overflow-y-auto bg-white">
+      <div
+        className="
+          fixed
+          top-0
+          left-0
+
+          w-80
+
+          p-6
+
+          border-r
+          border-emerald-200
+          dark:border-emerald-500/20
+
+          h-screen
+
+          overflow-y-auto
+
+          bg-white
+          dark:bg-gray-950
+        "
+      >
         <div className="animate-pulse space-y-4">
           <div className="flex justify-between items-center mb-6">
-            <div className="h-6 w-32 bg-gray-200 rounded"></div>
-            <div className="h-8 w-8 bg-gray-200 rounded-lg"></div>
+            <div className="h-6 w-32 bg-gray-200 dark:bg-gray-800 rounded"></div>
+
+            <div className="h-8 w-8 bg-gray-200 dark:bg-gray-800 rounded-lg"></div>
           </div>
 
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-24 bg-gray-200 rounded-xl"></div>
+            <div
+              key={i}
+              className="h-24 bg-gray-200 dark:bg-gray-800 rounded-xl"
+            ></div>
           ))}
         </div>
       </div>
     );
   }
 
-  // Empty state
+  /* =========================
+     EMPTY STATE
+  ========================= */
+
   if (courseContent?.length === 0) {
     return (
-      <div className="fixed top-0 left-0 w-80 p-6 border-r border-emerald-200 h-screen overflow-y-auto bg-white flex flex-col items-center justify-center">
-        <BookOpen className="w-16 h-16 text-gray-300 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-700 mb-2">
+      <div
+        className="
+          fixed
+          top-0
+          left-0
+
+          w-80
+
+          p-6
+
+          border-r
+          border-emerald-200
+          dark:border-emerald-500/20
+
+          h-screen
+
+          overflow-y-auto
+
+          bg-white
+          dark:bg-gray-950
+
+          flex
+          flex-col
+          items-center
+          justify-center
+        "
+      >
+        <BookOpen
+          className="
+            w-16
+            h-16
+
+            text-gray-300
+            dark:text-gray-700
+
+            mb-4
+          "
+        />
+
+        <h3
+          className="
+            text-lg
+            font-semibold
+
+            text-gray-700
+            dark:text-white
+
+            mb-2
+          "
+        >
           No Chapters Available
         </h3>
-        <p className="text-gray-500 text-center">
+
+        <p
+          className="
+            text-gray-500
+            dark:text-gray-400
+
+            text-center
+          "
+        >
           This course doesn't have any chapters yet.
         </p>
       </div>
     );
   }
 
-  // If sidebar is collapsed, show minimal version
+  /* =========================
+     COLLAPSED SIDEBAR
+  ========================= */
+
   if (isCollapsed) {
     return (
-      <div className="fixed top-0 bg-white left-0 w-16 p-4 border-r border-emerald-200 h-screen overflow-y-auto flex flex-col items-center z-40 shadow-sm">
-        {/* Back to workspace button */}
+      <div
+        className="
+          fixed
+          top-0
+          left-0
+
+          w-16
+
+          p-4
+
+          border-r
+          border-emerald-200
+          dark:border-emerald-500/20
+
+          h-screen
+
+          overflow-y-auto
+
+          flex
+          flex-col
+          items-center
+
+          z-40
+
+          shadow-sm
+
+          bg-white/90
+          dark:bg-gray-950/90
+
+          backdrop-blur-xl
+        "
+      >
+        {/* BACK */}
         <Link
           href="/workspace"
-          className="mb-3 p-2 rounded-lg hover:bg-emerald-100 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 group"
-          title="Back to Workspace"
-          aria-label="Navigate back to workspace"
+          className="
+            mb-3
+
+            p-2
+
+            rounded-xl
+
+            hover:bg-emerald-100
+            dark:hover:bg-gray-800
+
+            transition-colors
+
+            group
+          "
         >
-          <ArrowLeft className="w-5 h-5 text-emerald-700 group-hover:-translate-x-0.5 transition-transform" />
+          <ArrowLeft
+            className="
+              w-5
+              h-5
+
+              text-emerald-700
+              dark:text-emerald-300
+
+              group-hover:-translate-x-0.5
+
+              transition-transform
+            "
+          />
         </Link>
 
-        {/* Expand button */}
+        {/* EXPAND */}
         <button
           onClick={() => setIsCollapsed(false)}
-          className="mb-6 p-2 rounded-lg hover:bg-emerald-100 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
-          title="Expand sidebar"
-          aria-label="Expand chapter sidebar"
+          className="
+            mb-6
+
+            p-2
+
+            rounded-xl
+
+            hover:bg-emerald-100
+            dark:hover:bg-gray-800
+
+            transition-colors
+          "
         >
-          <ChevronRight className="w-5 h-5 text-emerald-700" />
+          <ChevronRight
+            className="
+              w-5
+              h-5
+
+              text-emerald-700
+              dark:text-emerald-300
+            "
+          />
         </button>
 
-        {/* Chapter indicators */}
+        {/* CHAPTERS */}
         <div className="space-y-3">
           {courseContent?.map((chapter, index) => {
             const isCompleted = completedChapters.includes(index);
+
             const isSelected = selectedChapterIndex === index;
+
             const progress = calculateChapterProgress(index);
 
             return (
@@ -271,30 +451,74 @@ useEffect(() => {
                 key={index}
                 onClick={() => {
                   setSelectedChapterIndex(index);
+
                   if (isMobile) setIsCollapsed(false);
                 }}
                 className={`
-                  relative w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold
-                  transition-all transform hover:scale-110 active:scale-95
-                  focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2
-                  ${
-                    isSelected
-                      ? "bg-emerald-600 text-white shadow-lg ring-2 ring-emerald-300 ring-offset-1"
-                      : isCompleted
-                        ? "bg-emerald-100 text-emerald-700 border-2 border-emerald-300"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }
-                `}
-                title={`Chapter ${index + 1}: ${chapter.courseData?.chapterName || "Untitled"}`}
-                aria-label={`Go to chapter ${index + 1}: ${chapter.courseData?.chapterName || "Untitled"}`}
-                aria-pressed={isSelected}
+                    relative
+
+                    w-10
+                    h-10
+
+                    rounded-full
+
+                    flex
+                    items-center
+                    justify-center
+
+                    text-sm
+                    font-semibold
+
+                    transition-all
+
+                    hover:scale-110
+
+                    ${
+                      isSelected
+                        ? `
+                          bg-emerald-600
+                          text-white
+
+                          shadow-lg
+                        `
+                        : isCompleted
+                          ? `
+                          bg-emerald-100
+                          dark:bg-emerald-500/20
+
+                          text-emerald-700
+                          dark:text-emerald-300
+
+                          border-2
+                          border-emerald-300
+                        `
+                          : `
+                          bg-gray-100
+                          dark:bg-gray-800
+
+                          text-gray-700
+                          dark:text-gray-300
+                        `
+                    }
+                  `}
               >
                 {index + 1}
+
                 {isCompleted && (
-                  <CheckCircle className="absolute -top-1 -right-1 w-3 h-3 text-emerald-500" />
+                  <CheckCircle
+                    className="
+                        absolute
+                        -top-1
+                        -right-1
+
+                        w-3
+                        h-3
+
+                        text-emerald-500
+                      "
+                  />
                 )}
 
-                {/* Progress ring for incomplete chapters with progress */}
                 {!isCompleted && progress > 0 && progress < 100 && (
                   <svg className="absolute inset-0 w-full h-full transform -rotate-90">
                     <circle
@@ -305,6 +529,7 @@ useEffect(() => {
                       stroke="#d1fae5"
                       strokeWidth="3"
                     />
+
                     <circle
                       cx="20"
                       cy="20"
@@ -313,7 +538,9 @@ useEffect(() => {
                       stroke="#10b981"
                       strokeWidth="3"
                       strokeDasharray={`${2 * Math.PI * 18}`}
-                      strokeDashoffset={`${2 * Math.PI * 18 * (1 - progress / 100)}`}
+                      strokeDashoffset={`${
+                        2 * Math.PI * 18 * (1 - progress / 100)
+                      }`}
                     />
                   </svg>
                 )}
@@ -322,126 +549,394 @@ useEffect(() => {
           })}
         </div>
 
-        {/* Mobile menu button for expanded view */}
+        {/* MOBILE */}
         {isMobile && (
           <button
             onClick={() => setIsCollapsed(false)}
-            className="mt-auto p-2 rounded-lg hover:bg-emerald-100 transition-colors"
-            title="Show chapters"
-            aria-label="Show chapter list"
+            className="
+              mt-auto
+
+              p-2
+
+              rounded-xl
+
+              hover:bg-emerald-100
+              dark:hover:bg-gray-800
+            "
           >
-            <Menu className="w-5 h-5 text-emerald-700" />
+            <Menu
+              className="
+                w-5
+                h-5
+
+                text-emerald-700
+                dark:text-emerald-300
+              "
+            />
           </button>
         )}
       </div>
     );
   }
 
-  // Full expanded sidebar
+  /* =========================
+     FULL SIDEBAR
+  ========================= */
+
   return (
     <>
-      <div className="fixed top-0 bg-white left-0 w-80 p-6 border-r border-emerald-200 h-screen overflow-y-auto no-scrollbar transition-all duration-300 z-40 shadow-lg">
-        {/* Back to workspace button */}
-        <div className="mb-4 flex flex-col gap-2">
+      <div
+        className="
+          fixed
+          top-0
+          left-0
+
+          w-80
+
+          p-6
+
+          border-r
+          border-emerald-200
+          dark:border-emerald-500/20
+
+          h-screen
+
+          overflow-y-auto
+
+          no-scrollbar
+
+          transition-all
+          duration-300
+
+          z-40
+
+          shadow-xl
+
+          bg-white/95
+          dark:bg-gray-950/95
+
+          backdrop-blur-xl
+        "
+      >
+        {/* HEADER BUTTONS */}
+        <div className="mt-12 mb-4 flex flex-col gap-2">
           <button
             onClick={handleExportPDF}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
+            className="
+              flex
+              items-center
+              justify-center
+
+              gap-2
+
+              px-4
+              py-2.5
+
+              bg-emerald-600
+              hover:bg-emerald-700
+
+              text-white
+
+              rounded-2xl
+
+              transition-all
+              duration-300
+
+              shadow-lg
+              hover:shadow-xl
+            "
           >
             <Download className="w-4 h-4" />
             Export PDF
           </button>
+
           <Link
             href="/workspace"
-            className="inline-flex items-center gap-2 px-4 py-2 text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50 rounded-lg transition-colors group font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+            className="
+              inline-flex
+              items-center
+
+              gap-2
+
+              px-4
+              py-2.5
+
+              text-emerald-700
+              dark:text-emerald-300
+
+              hover:bg-emerald-50
+              dark:hover:bg-gray-800
+
+              rounded-2xl
+
+              transition-all
+            "
           >
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+            <ArrowLeft className="w-4 h-4" />
             Back to Workspace
           </Link>
         </div>
 
-        {/* Sidebar header with collapse button */}
-        <div className="flex justify-between items-center mb-6 pb-4 border-b border-emerald-100">
+        {/* SIDEBAR HEADER */}
+        <div
+          className="
+            flex
+            justify-between
+            items-center
+
+            mb-6
+
+            pb-4
+
+            border-b
+            border-emerald-100
+            dark:border-gray-800
+          "
+        >
           <div>
-            <h2 className="font-bold text-xl text-emerald-900">
+            <h2
+              className="
+                font-bold
+                text-xl
+
+                text-emerald-900
+                dark:text-white
+              "
+            >
               Course Chapters
             </h2>
+
             <div className="flex items-center gap-2 mt-1">
-              <span className="text-sm text-emerald-600 font-medium">
+              <span
+                className="
+                  text-sm
+
+                  text-emerald-600
+                  dark:text-emerald-300
+
+                  font-medium
+                "
+              >
                 {courseContent?.length} chapters
               </span>
+
               <span className="text-gray-400">•</span>
-              <span className="text-sm text-gray-500">
+
+              <span
+                className="
+                  text-sm
+
+                  text-gray-500
+                  dark:text-gray-400
+                "
+              >
                 {completedChapters.length} completed
               </span>
             </div>
           </div>
+
           <button
             onClick={() => setIsCollapsed(true)}
-            className="p-2 rounded-lg hover:bg-emerald-100 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
-            title="Collapse sidebar"
-            aria-label="Collapse chapter sidebar"
+            className="
+              p-2
+
+              rounded-xl
+
+              hover:bg-emerald-100
+              dark:hover:bg-gray-800
+
+              transition-colors
+            "
           >
-            <ChevronLeft className="w-5 h-5 text-emerald-700" />
+            <ChevronLeft
+              className="
+                w-5
+                h-5
+
+                text-emerald-700
+                dark:text-emerald-300
+              "
+            />
           </button>
         </div>
 
-        {/* Progress summary */}
-        <div className="mb-6 p-4 bg-emerald-50 rounded-xl border border-emerald-200">
+        {/* PROGRESS */}
+        <div
+          className="
+            mb-6
+
+            p-4
+
+            bg-emerald-50
+            dark:bg-emerald-500/10
+
+            rounded-2xl
+
+            border
+            border-emerald-200
+            dark:border-emerald-500/20
+          "
+        >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-emerald-800">
+            <span
+              className="
+                text-sm
+                font-medium
+
+                text-emerald-800
+                dark:text-emerald-300
+              "
+            >
               Overall Progress
             </span>
-            <span className="text-sm font-bold text-emerald-700">
+
+            <span
+              className="
+                text-sm
+                font-bold
+
+                text-emerald-700
+                dark:text-emerald-300
+              "
+            >
               {Math.round(
                 (completedChapters.length / courseContent.length) * 100,
               )}
               %
             </span>
           </div>
-          <div className="w-full bg-emerald-200 rounded-full h-2">
+
+          <div
+            className="
+              w-full
+
+              bg-emerald-200
+              dark:bg-gray-800
+
+              rounded-full
+
+              h-2
+            "
+          >
             <div
-              className="bg-emerald-600 h-2 rounded-full transition-all duration-500"
+              className="
+                bg-emerald-600
+
+                h-2
+
+                rounded-full
+
+                transition-all
+                duration-500
+              "
               style={{
-                width: `${(completedChapters.length / courseContent.length) * 100}%`,
+                width: `${
+                  (completedChapters.length / courseContent.length) * 100
+                }%`,
               }}
             />
           </div>
-          <div className="flex items-center justify-between mt-3 text-xs text-emerald-700">
+
+          <div
+            className="
+              flex
+              items-center
+              justify-between
+
+              mt-3
+
+              text-xs
+
+              text-emerald-700
+              dark:text-emerald-300
+            "
+          >
             <span className="flex items-center gap-1">
               <CheckCircle className="w-3 h-3" />
               {completedChapters.length} completed
             </span>
+
             <span>
               {courseContent.length - completedChapters.length} remaining
             </span>
           </div>
         </div>
 
-        {/* =========================
-           FINAL QUIZ CARD
-        ========================= */}
+        {/* QUIZ */}
         {isCourseCompleted ? (
-          <div className="mb-6 p-4 bg-linear-to-br from-emerald-500 to-emerald-600 text-white rounded-xl shadow-lg">
+          <div
+            className="
+              mb-6
+
+              p-5
+
+              bg-gradient-to-br
+              from-emerald-500
+              to-emerald-600
+
+              text-white
+
+              rounded-3xl
+
+              shadow-xl
+            "
+          >
             <h3 className="font-semibold text-lg mb-1">Final Quiz</h3>
 
-            <p className="text-sm opacity-90 mb-3">
+            <p className="text-sm opacity-90 mb-4">
               Test your knowledge and see your score
             </p>
 
             <button
               onClick={handleStartQuiz}
-              className="w-full bg-white text-emerald-700 font-semibold py-2 rounded-lg hover:bg-gray-100 transition"
+              className="
+                w-full
+
+                bg-white
+
+                text-emerald-700
+
+                font-semibold
+
+                py-2.5
+
+                rounded-2xl
+
+                hover:bg-gray-100
+
+                transition-all
+              "
             >
               Start Quiz
             </button>
           </div>
         ) : (
-          <div className="mb-6 p-4 bg-gray-100 border border-gray-200 rounded-xl text-gray-600">
+          <div
+            className="
+              mb-6
+
+              p-4
+
+              bg-gray-100
+              dark:bg-gray-900
+
+              border
+              border-gray-200
+              dark:border-gray-800
+
+              rounded-2xl
+
+              text-gray-600
+              dark:text-gray-300
+            "
+          >
             <h3 className="font-semibold text-lg mb-1">🔒 Final Quiz</h3>
 
             <p className="text-sm">Complete all chapters to unlock quiz</p>
           </div>
         )}
+
+        {/* ACCORDION */}
         <Accordion
           type="single"
           collapsible
@@ -454,6 +949,7 @@ useEffect(() => {
         >
           {courseContent?.map((chapter, index) => {
             const isCompleted = completedChapters.includes(index);
+
             const progress = calculateChapterProgress(index);
 
             return (
@@ -462,41 +958,158 @@ useEffect(() => {
                 key={index}
                 onClick={() => setSelectedChapterIndex(index)}
                 className={`
-                rounded-xl border shadow-sm transition-all hover:shadow-md
-                focus-within:ring-2 focus-within:ring-emerald-500 focus-within:ring-offset-2
-                ${
-                  isCompleted
-                    ? "bg-white border-emerald-300 shadow-md scale-[1.01] border-l-4 border-l-emerald-600"
-                    : "bg-white border-emerald-200"
-                }
-                ${selectedChapterIndex === index ? "ring-2 ring-emerald-500 ring-offset-1" : ""}
-              `}
+                    rounded-2xl
+
+                    border
+
+                    shadow-sm
+                    hover:shadow-lg
+
+                    transition-all
+
+                    overflow-hidden
+
+                    ${
+                      isCompleted
+                        ? `
+                          bg-white
+                          dark:bg-gray-900
+
+                          border-emerald-300
+                          dark:border-emerald-500/20
+
+                          border-l-4
+                          border-l-emerald-600
+                        `
+                        : `
+                          bg-white
+                          dark:bg-gray-900
+
+                          border-emerald-200
+                          dark:border-gray-800
+                        `
+                    }
+
+                    ${
+                      selectedChapterIndex === index
+                        ? `
+                          ring-2
+                          ring-emerald-500
+                          ring-offset-1
+                        `
+                        : ""
+                    }
+                  `}
               >
-                <AccordionTrigger className="px-4 py-3 text-lg text-emerald-900 font-semibold hover:no-underline">
+                <AccordionTrigger
+                  className="
+                      px-4
+                      py-4
+
+                      text-lg
+
+                      text-emerald-900
+                      dark:text-white
+
+                      font-semibold
+
+                      hover:no-underline
+                    "
+                >
                   <div className="flex items-center gap-3 w-full">
-                    <span className="flex items-center justify-center w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 text-sm font-bold">
+                    <span
+                      className="
+                          flex
+                          items-center
+                          justify-center
+
+                          w-7
+                          h-7
+
+                          rounded-full
+
+                          bg-emerald-100
+                          dark:bg-emerald-500/20
+
+                          text-emerald-700
+                          dark:text-emerald-300
+
+                          text-sm
+                          font-bold
+                        "
+                    >
                       {index + 1}
                     </span>
-                    <div className="flex-1 text-left">
-                      <div className="font-semibold text-gray-900">
-                        {chapter.courseData?.chapterName ||
-                          `Chapter ${index + 1}`}
+
+                    <div className="flex-1 text-left min-w-0">
+                      <div
+                        className="
+                            font-semibold
+
+                            text-gray-900
+                            dark:text-white
+
+                            break-words
+                          "
+                      >
+                        {chapter.courseData?.chapterName}
                       </div>
+
                       {chapter.courseData?.duration && (
-                        <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+                        <div
+                          className="
+                              flex
+                              items-center
+
+                              gap-1
+
+                              text-xs
+
+                              text-gray-500
+                              dark:text-gray-400
+
+                              mt-1
+                            "
+                        >
                           <Clock className="w-3 h-3" />
+
                           {chapter.courseData.duration}
                         </div>
                       )}
                     </div>
+
                     <div className="flex items-center gap-2">
                       {!isCompleted && progress > 0 && (
-                        <div className="text-xs font-medium text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full">
+                        <div
+                          className="
+                                text-xs
+                                font-medium
+
+                                text-emerald-700
+                                dark:text-emerald-300
+
+                                bg-emerald-100
+                                dark:bg-emerald-500/20
+
+                                px-2
+                                py-1
+
+                                rounded-full
+                              "
+                        >
                           {progress}%
                         </div>
                       )}
+
                       {isCompleted && (
-                        <CheckCircle className="w-5 h-5 text-emerald-500" />
+                        <CheckCircle
+                          className="
+                              w-5
+                              h-5
+
+                              text-emerald-500
+                            "
+                        />
                       )}
                     </div>
                   </div>
@@ -515,39 +1128,127 @@ useEffect(() => {
                           <button
                             key={tIndex}
                             className={`
-                            w-full p-3 rounded-lg shadow-sm cursor-pointer transition-all border text-left
-                            flex items-center gap-3 hover:scale-[1.02] active:scale-[0.98]
-                            focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-1
-                            ${
-                              isTopicCompleted
-                                ? "bg-emerald-50 border-emerald-300 text-emerald-900"
-                                : "bg-gray-50 border-gray-200 text-gray-800 hover:bg-gray-100"
-                            }
-                          `}
+                                  w-full
+
+                                  p-3
+
+                                  rounded-2xl
+
+                                  shadow-sm
+
+                                  cursor-pointer
+
+                                  transition-all
+
+                                  border
+
+                                  text-left
+
+                                  flex
+                                  items-center
+
+                                  gap-3
+
+                                  hover:scale-[1.02]
+
+                                  ${
+                                    isTopicCompleted
+                                      ? `
+                                        bg-emerald-50
+                                        dark:bg-emerald-500/10
+
+                                        border-emerald-300
+                                        dark:border-emerald-500/20
+
+                                        text-emerald-900
+                                        dark:text-emerald-200
+                                      `
+                                      : `
+                                        bg-gray-50
+                                        dark:bg-gray-800
+
+                                        border-gray-200
+                                        dark:border-gray-700
+
+                                        text-gray-800
+                                        dark:text-gray-200
+
+                                        hover:bg-gray-100
+                                        dark:hover:bg-gray-700
+                                      `
+                                  }
+                                `}
                             onClick={() => handleTopicClick(tIndex)}
-                            aria-label={`Go to topic: ${topic.topic}`}
                           >
                             <div
-                              className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs
-                            ${
-                              isTopicCompleted
-                                ? "bg-emerald-500 text-white"
-                                : "bg-gray-300 text-gray-700"
-                            }`}
+                              className={`
+                                    shrink-0
+
+                                    w-6
+                                    h-6
+
+                                    rounded-full
+
+                                    flex
+                                    items-center
+                                    justify-center
+
+                                    text-xs
+
+                                    ${
+                                      isTopicCompleted
+                                        ? `
+                                          bg-emerald-500
+                                          text-white
+                                        `
+                                        : `
+                                          bg-gray-300
+                                          dark:bg-gray-700
+
+                                          text-gray-700
+                                          dark:text-gray-300
+                                        `
+                                    }
+                                  `}
                             >
                               {tIndex + 1}
                             </div>
-                            <span className="flex-1 font-medium">
+
+                            <span className="flex-1 font-medium break-words">
                               {topic.topic}
                             </span>
+
                             {isTopicCompleted && (
-                              <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+                              <CheckCircle
+                                className="
+                                      w-4
+                                      h-4
+
+                                      text-emerald-500
+
+                                      shrink-0
+                                    "
+                              />
                             )}
                           </button>
                         );
                       })
                     ) : (
-                      <div className="p-4 text-center text-gray-500 bg-gray-50 rounded-lg">
+                      <div
+                        className="
+                            p-4
+
+                            text-center
+
+                            text-gray-500
+                            dark:text-gray-400
+
+                            bg-gray-50
+                            dark:bg-gray-800
+
+                            rounded-2xl
+                          "
+                      >
                         No topics available for this chapter
                       </div>
                     )}
@@ -558,6 +1259,8 @@ useEffect(() => {
           })}
         </Accordion>
       </div>
+
+      {/* FEEDBACK */}
       {showFeedback && (
         <FeedbackDialog
           onClose={() => setShowFeedback(false)}
@@ -565,6 +1268,112 @@ useEffect(() => {
           user={user}
         />
       )}
+
+      {/* =========================
+    QUIZ LOADER OVERLAY
+========================= */}
+
+{startingQuiz && (
+  <div
+    className="
+      fixed
+      inset-0
+
+      z-[9999]
+
+      bg-black/40
+
+      backdrop-blur-md
+
+      flex
+      items-center
+      justify-center
+
+      px-4
+    "
+  >
+    <div
+      className="
+        flex
+        flex-col
+        items-center
+
+        gap-6
+
+        p-8
+        sm:p-10
+
+        bg-white/90
+        dark:bg-gray-900/90
+
+        rounded-3xl
+
+        shadow-2xl
+
+        border
+        border-emerald-200
+        dark:border-emerald-500/20
+
+        max-w-sm
+        w-full
+      "
+    >
+      {/* SPINNER */}
+      <Loader2
+        className="
+          w-14
+          h-14
+
+          text-emerald-600
+          dark:text-emerald-300
+
+          animate-spin
+        "
+      />
+
+      {/* TEXT */}
+      <div className="text-center">
+
+        <h2
+          className="
+            text-2xl
+            font-bold
+
+            text-emerald-700
+            dark:text-emerald-300
+          "
+        >
+          Starting Quiz...
+        </h2>
+
+        <p
+          className="
+            text-gray-500
+            dark:text-gray-400
+
+            text-sm
+
+            mt-2
+          "
+        >
+          Preparing your quiz
+        </p>
+
+      </div>
+
+      {/* DOTS */}
+      <div className="flex gap-2">
+
+        <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce"></span>
+
+        <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce delay-150"></span>
+
+        <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce delay-300"></span>
+
+      </div>
+    </div>
+  </div>
+)}
     </>
   );
 }

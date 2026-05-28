@@ -20,16 +20,26 @@ export async function PUT(req) {
 
     const userEmail = user.emailAddresses[0]?.emailAddress;
 
+    //  Validate email exists
+    if (!userEmail) {
+      return NextResponse.json(
+        { error: "User email not found" },
+        { status: 400 }
+      );
+    }
+
     const body = await req.json();
-    const { 
-      cid, 
-      action, 
-      chapterIndex, 
-      newChapterName, 
-      topicIndex, 
-      newTopicName 
+
+    const {
+      cid,
+      action,
+      chapterIndex,
+      newChapterName,
+      topicIndex,
+      newTopicName,
     } = body;
 
+    //  Validate course id
     if (!cid) {
       return NextResponse.json(
         { error: "Course ID required" },
@@ -48,6 +58,7 @@ export async function PUT(req) {
         )
       );
 
+    //  Course existence check
     if (!courses.length) {
       return NextResponse.json(
         { error: "Course not found" },
@@ -57,6 +68,7 @@ export async function PUT(req) {
 
     const course = courses[0];
 
+    //  Ownership validation
     if (course.useremail !== userEmail) {
       return NextResponse.json(
         { error: "Forbidden" },
@@ -64,10 +76,29 @@ export async function PUT(req) {
       );
     }
 
-    // Bulk update support (after authorization)
+    // ====================================================
+    //  BULK UPDATE SUPPORT
+    // ====================================================
+
     if (body.updatedCourseJson) {
-      await db.update(coursesTable)
-        .set({ courseJson: body.updatedCourseJson })
+      const courseData = body.updatedCourseJson;
+
+      //  Validate structure
+      if (
+        !courseData?.course?.chapters ||
+        !Array.isArray(courseData.course.chapters)
+      ) {
+        return NextResponse.json(
+          { error: "Invalid course JSON structure" },
+          { status: 400 }
+        );
+      }
+
+      await db
+        .update(coursesTable)
+        .set({
+          courseJson: courseData,
+        })
         .where(
           and(
             eq(coursesTable.cid, cid),
@@ -75,32 +106,43 @@ export async function PUT(req) {
           )
         );
 
-      return NextResponse.json({ success: true });
+      return NextResponse.json({
+        success: true,
+      });
     }
 
+    //  Action validation AFTER bulk update
     if (!action) {
       return NextResponse.json(
-        { error:"Action required" },
+        { error: "Action required" },
         { status: 400 }
       );
     }
 
-    // 🧠 Deep clone
-    let updatedCourseJson = JSON.parse(JSON.stringify(course.courseJson));
+    // ====================================================
+    // 🧠 DEEP CLONE
+    // ====================================================
 
-    const chapters = updatedCourseJson.course.chapters;
+    let updatedCourseJson = JSON.parse(
+      JSON.stringify(course.courseJson)
+    );
 
-    // Validate course structure first
-    if (!Array.isArray(chapters)) {
+    //  Validate root structure
+    if (
+      !updatedCourseJson?.course ||
+      !Array.isArray(updatedCourseJson.course.chapters)
+    ) {
       return NextResponse.json(
         { error: "Invalid course structure" },
         { status: 400 }
       );
     }
 
-    // ============================
+    const chapters = updatedCourseJson.course.chapters;
+
+    // ====================================================
     // 📘 CHAPTER ACTIONS
-    // ============================
+    // ====================================================
 
     if (action === "update-chapter") {
       if (
@@ -114,20 +156,29 @@ export async function PUT(req) {
         );
       }
 
-      if (!newChapterName?.trim()) {
+      if (
+        !newChapterName ||
+        typeof newChapterName !== "string" ||
+        !newChapterName.trim()
+      ) {
         return NextResponse.json(
           { error: "Chapter name required" },
           { status: 400 }
         );
       }
 
-      chapters[chapterIndex].chapterName = newChapterName.trim();
+      chapters[chapterIndex].chapterName =
+        newChapterName.trim();
 
       console.log("✏️ Chapter updated:", chapterIndex);
     }
 
     else if (action === "add-chapter") {
-      if (!newChapterName?.trim()) {
+      if (
+        !newChapterName ||
+        typeof newChapterName !== "string" ||
+        !newChapterName.trim()
+      ) {
         return NextResponse.json(
           { error: "Chapter name required" },
           { status: 400 }
@@ -160,12 +211,12 @@ export async function PUT(req) {
       console.log("🗑️ Chapter deleted:", chapterIndex);
     }
 
-    // ============================
+    // ====================================================
     // 📚 TOPIC ACTIONS
-    // ============================
+    // ====================================================
 
     else {
-      // Validate chapter index first
+      //  Validate chapter index
       if (
         chapterIndex === undefined ||
         chapterIndex < 0 ||
@@ -181,14 +232,21 @@ export async function PUT(req) {
 
       if (!chapter) {
         return NextResponse.json(
-          { error: `Chapter not found at index ${chapterIndex}` },
+          {
+            error: `Chapter not found at index ${chapterIndex}`,
+          },
           { status: 400 }
         );
       }
 
-      const topics = chapter.topics || [];
+      //  FIX: Ensure topics persist
+      if (!chapter.topics) {
+        chapter.topics = [];
+      }
 
-      // Validate topics array
+      const topics = chapter.topics;
+
+      //  Validate topics array
       if (!Array.isArray(topics)) {
         return NextResponse.json(
           { error: "Invalid topics array" },
@@ -196,8 +254,11 @@ export async function PUT(req) {
         );
       }
 
+      // ====================================================
+      // ✏️ UPDATE TOPIC
+      // ====================================================
+
       if (action === "update") {
-        // Validate topicIndex and newTopicName for update
         if (
           topicIndex === undefined ||
           topicIndex < 0 ||
@@ -209,7 +270,11 @@ export async function PUT(req) {
           );
         }
 
-        if (!newTopicName || typeof newTopicName !== "string" || !newTopicName.trim()) {
+        if (
+          !newTopicName ||
+          typeof newTopicName !== "string" ||
+          !newTopicName.trim()
+        ) {
           return NextResponse.json(
             { error: "Topic name required" },
             { status: 400 }
@@ -217,11 +282,20 @@ export async function PUT(req) {
         }
 
         topics[topicIndex] = newTopicName.trim();
+
+        console.log("✏️ Topic updated");
       }
 
+      // ====================================================
+      // ➕ ADD TOPIC
+      // ====================================================
+
       else if (action === "add") {
-        // Validate newTopicName for add
-        if (!newTopicName || typeof newTopicName !== "string" || !newTopicName.trim()) {
+        if (
+          !newTopicName ||
+          typeof newTopicName !== "string" ||
+          !newTopicName.trim()
+        ) {
           return NextResponse.json(
             { error: "Topic name required" },
             { status: 400 }
@@ -229,10 +303,15 @@ export async function PUT(req) {
         }
 
         topics.push(newTopicName.trim());
+
+        console.log("➕ Topic added");
       }
 
+      // ====================================================
+      // 🗑️ DELETE TOPIC
+      // ====================================================
+
       else if (action === "delete") {
-        // Validate topicIndex for delete
         if (
           topicIndex === undefined ||
           topicIndex < 0 ||
@@ -245,6 +324,8 @@ export async function PUT(req) {
         }
 
         topics.splice(topicIndex, 1);
+
+        console.log("🗑️ Topic deleted");
       }
 
       else {
@@ -255,9 +336,9 @@ export async function PUT(req) {
       }
     }
 
-    // ============================
-    // 💾 SAVE
-    // ============================
+    // ====================================================
+    // 💾 SAVE UPDATED COURSE
+    // ====================================================
 
     await db
       .update(coursesTable)
@@ -279,6 +360,7 @@ export async function PUT(req) {
 
   } catch (err) {
     console.error("❌ Error:", err);
+
     return NextResponse.json(
       {
         error: "Internal server error",

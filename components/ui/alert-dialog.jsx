@@ -1,28 +1,61 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog"
+import * as React from "react";
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
+
+import { cn } from "@/lib/utils";
+
+import { Button } from "@/components/ui/button";
+
+/* =========================================
+   ROOT
+========================================= */
 
 function AlertDialog({
   ...props
 }) {
-  return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />;
+  return (
+    <AlertDialogPrimitive.Root
+      data-slot="alert-dialog"
+      {...props}
+    />
+  );
 }
+
+/* =========================================
+   TRIGGER
+========================================= */
 
 function AlertDialogTrigger({
   ...props
 }) {
-  return (<AlertDialogPrimitive.Trigger data-slot="alert-dialog-trigger" {...props} />);
+  return (
+    <AlertDialogPrimitive.Trigger
+      data-slot="alert-dialog-trigger"
+      {...props}
+    />
+  );
 }
+
+/* =========================================
+   PORTAL
+========================================= */
 
 function AlertDialogPortal({
   ...props
 }) {
-  return (<AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" {...props} />);
+  return (
+    <AlertDialogPrimitive.Portal
+      data-slot="alert-dialog-portal"
+      {...props}
+    />
+  );
 }
+
+/* =========================================
+   OVERLAY
+========================================= */
 
 function AlertDialogOverlay({
   className,
@@ -32,12 +65,30 @@ function AlertDialogOverlay({
     <AlertDialogPrimitive.Overlay
       data-slot="alert-dialog-overlay"
       className={cn(
-        "fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
+        `
+          fixed
+          inset-0
+          z-50
+
+          bg-black/50
+          backdrop-blur-sm
+
+          data-[state=open]:animate-in
+          data-[state=closed]:animate-out
+
+          data-[state=open]:fade-in-0
+          data-[state=closed]:fade-out-0
+        `,
         className
       )}
-      {...props} />
+      {...props}
+    />
   );
 }
+
+/* =========================================
+   CONTENT
+========================================= */
 
 function AlertDialogContent({
   className,
@@ -46,18 +97,70 @@ function AlertDialogContent({
 }) {
   return (
     <AlertDialogPortal>
+
       <AlertDialogOverlay />
+
       <AlertDialogPrimitive.Content
         data-slot="alert-dialog-content"
         data-size={size}
         className={cn(
-          "group/alert-dialog-content fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 data-[size=sm]:max-w-xs data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[size=default]:sm:max-w-lg",
+          `
+            fixed
+            left-1/2
+            top-1/2
+            z-50
+
+            w-[95vw]
+            max-w-[95vw]
+
+            translate-x-[-50%]
+            translate-y-[-50%]
+
+            rounded-3xl
+
+            border
+            border-gray-200
+            dark:border-gray-700
+
+            bg-white
+            dark:bg-gray-950
+
+            p-6
+            sm:p-7
+
+            shadow-2xl
+
+            duration-200
+
+            grid
+            gap-5
+
+            overflow-hidden
+
+            data-[state=open]:animate-in
+            data-[state=closed]:animate-out
+
+            data-[state=open]:fade-in-0
+            data-[state=closed]:fade-out-0
+
+            data-[state=open]:zoom-in-95
+            data-[state=closed]:zoom-out-95
+
+            data-[size=sm]:sm:max-w-sm
+            data-[size=default]:sm:max-w-lg
+            data-[size=lg]:sm:max-w-2xl
+          `,
           className
         )}
-        {...props} />
+        {...props}
+      />
     </AlertDialogPortal>
   );
 }
+
+/* =========================================
+   HEADER
+========================================= */
 
 function AlertDialogHeader({
   className,
@@ -67,12 +170,25 @@ function AlertDialogHeader({
     <div
       data-slot="alert-dialog-header"
       className={cn(
-        "grid grid-rows-[auto_1fr] place-items-center gap-1.5 text-center has-data-[slot=alert-dialog-media]:grid-rows-[auto_auto_1fr] has-data-[slot=alert-dialog-media]:gap-x-6 sm:group-data-[size=default]/alert-dialog-content:place-items-start sm:group-data-[size=default]/alert-dialog-content:text-left sm:group-data-[size=default]/alert-dialog-content:has-data-[slot=alert-dialog-media]:grid-rows-[auto_1fr]",
+        `
+          flex
+          flex-col
+
+          gap-2
+
+          text-center
+          sm:text-left
+        `,
         className
       )}
-      {...props} />
+      {...props}
+    />
   );
 }
+
+/* =========================================
+   FOOTER
+========================================= */
 
 function AlertDialogFooter({
   className,
@@ -82,12 +198,25 @@ function AlertDialogFooter({
     <div
       data-slot="alert-dialog-footer"
       className={cn(
-        "flex flex-col-reverse gap-2 group-data-[size=sm]/alert-dialog-content:grid group-data-[size=sm]/alert-dialog-content:grid-cols-2 sm:flex-row sm:justify-end",
+        `
+          flex
+          flex-col-reverse
+          sm:flex-row
+
+          gap-3
+
+          sm:justify-end
+        `,
         className
       )}
-      {...props} />
+      {...props}
+    />
   );
 }
+
+/* =========================================
+   TITLE
+========================================= */
 
 function AlertDialogTitle({
   className,
@@ -97,12 +226,25 @@ function AlertDialogTitle({
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
       className={cn(
-        "text-lg font-semibold sm:group-data-[size=default]/alert-dialog-content:group-has-data-[slot=alert-dialog-media]/alert-dialog-content:col-start-2",
+        `
+          text-xl
+          font-bold
+
+          tracking-tight
+
+          text-gray-900
+          dark:text-white
+        `,
         className
       )}
-      {...props} />
+      {...props}
+    />
   );
 }
+
+/* =========================================
+   DESCRIPTION
+========================================= */
 
 function AlertDialogDescription({
   className,
@@ -111,10 +253,25 @@ function AlertDialogDescription({
   return (
     <AlertDialogPrimitive.Description
       data-slot="alert-dialog-description"
-      className={cn("text-sm text-muted-foreground", className)}
-      {...props} />
+      className={cn(
+        `
+          text-sm
+
+          leading-relaxed
+
+          text-gray-500
+          dark:text-gray-400
+        `,
+        className
+      )}
+      {...props}
+    />
   );
 }
+
+/* =========================================
+   MEDIA
+========================================= */
 
 function AlertDialogMedia({
   className,
@@ -124,12 +281,40 @@ function AlertDialogMedia({
     <div
       data-slot="alert-dialog-media"
       className={cn(
-        "mb-2 inline-flex size-16 items-center justify-center rounded-md bg-muted sm:group-data-[size=default]/alert-dialog-content:row-span-2 *:[svg:not([class*='size-'])]:size-8",
+        `
+          mx-auto
+          sm:mx-0
+
+          flex
+          items-center
+          justify-center
+
+          w-16
+          h-16
+
+          rounded-2xl
+
+          bg-gray-100
+          dark:bg-gray-800
+
+          text-gray-700
+          dark:text-gray-300
+
+          shrink-0
+
+          *:[svg]:w-8
+          *:[svg]:h-8
+        `,
         className
       )}
-      {...props} />
+      {...props}
+    />
   );
 }
+
+/* =========================================
+   ACTION
+========================================= */
 
 function AlertDialogAction({
   className,
@@ -138,11 +323,31 @@ function AlertDialogAction({
   ...props
 }) {
   return (
-    <Button variant={variant} size={size} asChild>
-      <AlertDialogPrimitive.Action data-slot="alert-dialog-action" className={cn(className)} {...props} />
+    <Button
+      variant={variant}
+      size={size}
+      asChild
+      className="
+        rounded-2xl
+
+        shadow-sm
+        hover:shadow-md
+
+        transition-all
+      "
+    >
+      <AlertDialogPrimitive.Action
+        data-slot="alert-dialog-action"
+        className={cn(className)}
+        {...props}
+      />
     </Button>
   );
 }
+
+/* =========================================
+   CANCEL
+========================================= */
 
 function AlertDialogCancel({
   className,
@@ -151,11 +356,28 @@ function AlertDialogCancel({
   ...props
 }) {
   return (
-    <Button variant={variant} size={size} asChild>
-      <AlertDialogPrimitive.Cancel data-slot="alert-dialog-cancel" className={cn(className)} {...props} />
+    <Button
+      variant={variant}
+      size={size}
+      asChild
+      className="
+        rounded-2xl
+
+        transition-all
+      "
+    >
+      <AlertDialogPrimitive.Cancel
+        data-slot="alert-dialog-cancel"
+        className={cn(className)}
+        {...props}
+      />
     </Button>
   );
 }
+
+/* =========================================
+   EXPORTS
+========================================= */
 
 export {
   AlertDialog,
@@ -170,4 +392,4 @@ export {
   AlertDialogPortal,
   AlertDialogTitle,
   AlertDialogTrigger,
-}
+};

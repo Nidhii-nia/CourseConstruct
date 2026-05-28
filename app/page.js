@@ -1,250 +1,650 @@
 import PageWrapper from "@/app/components/PageWrapper";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Brain, Sparkles, Wand2, Cpu, BookOpen, Rocket } from "lucide-react";
+import {
+  ArrowRight,
+  Brain,
+  Sparkles,
+  Wand2,
+  Cpu,
+  BookOpen,
+  Rocket,
+  NotebookIcon,
+} from "lucide-react";
+
 import Link from "next/link";
 
 export default function Home() {
   return (
     <PageWrapper>
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-linear-to-br from-emerald-950 via-gray-900 to-emerald-900 text-white min-h-screen flex items-center">
-        {/* Animated Background Particles */}
-        <div className="absolute inset-0 overflow-hidden">
-          {[...Array(20)].map((_, i) => (
+      {/* GLOBAL THEME BUTTON */}
+      
+
+      {/* HERO SECTION */}
+      <section
+        className="
+          relative
+          overflow-hidden
+          min-h-screen
+          flex
+          items-center
+          pt-24
+          lg:pt-10
+
+          bg-linear-to-br
+          from-emerald-50
+          via-white
+          to-teal-100
+
+          dark:from-gray-950
+          dark:via-gray-900
+          dark:to-emerald-950
+
+          transition-colors
+          duration-500
+        "
+      >
+        {/* Background Blobs */}
+        <div className="absolute top-10 left-10 w-40 sm:w-52 h-40 sm:h-52 bg-yellow-200 dark:bg-yellow-500/10 rounded-full blur-3xl opacity-40"></div>
+
+        <div className="absolute bottom-10 right-10 w-56 sm:w-72 h-56 sm:h-72 bg-emerald-200 dark:bg-emerald-500/10 rounded-full blur-3xl opacity-40"></div>
+
+        <div className="absolute top-1/2 left-1/3 w-32 sm:w-40 h-32 sm:h-40 bg-sky-200 dark:bg-sky-500/10 rounded-full blur-3xl opacity-30"></div>
+
+        {/* Floating Particles */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(15)].map((_, i) => (
             <div
               key={i}
-              className="absolute w-0.5 h-0.5 bg-emerald-400 rounded-full animate-pulse"
+              className="absolute w-2 h-2 bg-emerald-300 dark:bg-emerald-400 rounded-full animate-pulse"
               style={{
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
                 animationDelay: `${Math.random() * 2}s`,
-                animationDuration: `${1 + Math.random() * 2}s`
               }}
             />
           ))}
         </div>
 
-        <div className="relative container mx-auto px-6 py-20">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            {/* Left Content */}
-            <div className="relative">
-              {/* AI Badge */}
-              <div className="inline-flex items-center gap-2 bg-emerald-800/30 backdrop-blur-sm px-4 py-2 rounded-full mb-8 animate-pulse border border-emerald-500/30">
-                <Sparkles className="h-4 w-4 text-emerald-300" />
-                <span className="text-sm font-medium text-emerald-200">AI-Powered Learning</span>
+        <div className="container mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-20">
+          {/* MAIN GRID */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 xl:gap-20 items-center max-w-7xl mx-auto">
+            
+            {/* LEFT SIDE */}
+            <div className="relative z-10 order-2 lg:order-1 min-w-0 text-center lg:text-left">
+
+              {/* Badge */}
+              <div
+                className="
+                  inline-flex
+                  items-center
+                  gap-2
+
+                  bg-white/80
+                  dark:bg-gray-900/70
+
+                  backdrop-blur-xl
+
+                  px-4
+                  py-2
+
+                  rounded-full
+
+                  mb-8
+
+                  border
+                  border-white
+                  dark:border-gray-700
+
+                  shadow-lg
+                "
+              >
+                <Sparkles className="h-4 w-4 text-emerald-500" />
+
+                <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                  AI-Powered Learning
+                </span>
               </div>
-              
+
               {/* Main Heading */}
-              <h1 className="text-5xl md:text-5xl font-bold mb-8 leading-tight">
-                <span className="block bg-clip-text text-transparent bg-linear-to-r from-emerald-300 to-emerald-100">
+              <h1
+                className="
+                  text-4xl
+                  sm:text-5xl
+                  lg:text-5xl
+                  xl:text-6xl
+                  2xl:text-7xl
+
+                  font-extrabold
+                  tracking-tight
+                  leading-[0.95]
+
+                  mb-6
+
+                  wrap-break-word
+                "
+              >
+                <span
+                  className="
+                    inline-block
+                    bg-clip-text
+                    text-transparent
+
+                    bg-linear-to-r
+                    from-emerald-500
+                    via-teal-400
+                    to-sky-400
+                  "
+                >
                   CourseConstruct
                 </span>
               </h1>
-              
+
               {/* Subtitle */}
               <div className="mb-8">
-                <h2 className="text-3xl md:text-5xl text-emerald-100 mb-3">
+                <h2
+                  className="
+                    text-2xl
+                    sm:text-3xl
+                    lg:text-4xl
+                    xl:text-5xl
+
+                    font-bold
+                    leading-tight
+
+                    text-gray-900
+                    dark:text-white
+
+                    mb-3
+                  "
+                >
                   AI-Generated Courses,
                 </h2>
-                <h3 className="text-2xl md:text-4xl text-emerald-200/80">
+
+                <h3
+                  className="
+                    text-xl
+                    sm:text-2xl
+                    lg:text-3xl
+                    xl:text-4xl
+
+                    font-semibold
+
+                    text-emerald-700
+                    dark:text-emerald-300
+                  "
+                >
                   Personalized for You
                 </h3>
               </div>
-              
+
               {/* Description */}
-              <p className="text-lg text-emerald-100/80 mb-12 max-w-xl leading-relaxed">
-                Generate custom learning paths instantly with artificial intelligence. 
-                No predefined courses—just tell us what you want to learn, and our AI builds it for you.
+              <p
+                className="
+                  text-base
+                  sm:text-lg
+
+                  text-gray-600
+                  dark:text-gray-300
+
+                  leading-relaxed
+
+                  mb-10
+
+                  max-w-xl
+                  mx-auto
+                  lg:mx-0
+                "
+              >
+                Generate custom learning paths instantly with artificial
+                intelligence. No predefined courses—just tell us what you want
+                to learn, and our AI builds it for you.
               </p>
 
-              {/* Single CTA Button - Links to workspace */}
-              <div className="mb-16">
+              {/* CTA */}
+              <div className="mb-12">
                 <Link href="/workspace">
-                  <Button 
-                    size="lg" 
-                    className="bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-semibold shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-300 group px-8 py-6 w-full sm:w-auto"
+                  <Button
+                    size="lg"
+                    className="
+                      w-full
+                      sm:w-auto
+
+                      px-8
+                      py-6
+
+                      text-base
+                      sm:text-lg
+
+                      rounded-2xl
+
+                      text-white
+                      font-bold
+
+                      border
+                      border-white/30
+
+                      shadow-xl
+
+                      bg-linear-to-r
+                      from-emerald-400
+                      via-teal-400
+                      to-sky-400
+
+                      dark:from-emerald-500
+                      dark:via-teal-500
+                      dark:to-cyan-500
+
+                      hover:scale-105
+                      hover:shadow-2xl
+
+                      transition-all
+                      duration-300
+                    "
                   >
                     <Brain className="mr-3 h-5 w-5" />
                     See AI in Action
-                    <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
               </div>
 
-              {/* AI Stats */}
-              <div className="grid grid-cols-3 gap-6 pt-8 border-t border-emerald-800/50">
-                <div className="text-center group hover:scale-105 transition-transform">
-                  <div className="text-3xl font-bold text-emerald-300 mb-1">∞</div>
-                  <div className="text-emerald-200/70 text-sm">Course Possibilities</div>
-                </div>
-                <div className="text-center group hover:scale-105 transition-transform">
-                  <div className="text-3xl font-bold text-emerald-300 mb-1 flex items-center justify-center">
-                    <Brain className="h-6 w-6" />
+              {/* STATS */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-8 border-t border-emerald-200 dark:border-gray-700">
+
+                {/* CARD 1 */}
+                <div
+                  className="
+                    p-5
+
+                    rounded-4xl
+
+                    bg-white/80
+                    dark:bg-gray-900/70
+
+                    border
+                    border-white
+                    dark:border-gray-700
+
+                    shadow-lg
+                    backdrop-blur-xl
+
+                    transition-all
+                    duration-300
+
+                    hover:-translate-y-1
+                  "
+                >
+                  <div className="text-3xl font-bold text-emerald-500 mb-2">
+                    ∞
                   </div>
-                  <div className="text-emerald-200/70 text-sm">AI-Generated</div>
+
+                  <div className="text-sm text-gray-600 dark:text-gray-300">
+                    Course Possibilities
+                  </div>
                 </div>
-                <div className="text-center group hover:scale-105 transition-transform">
-                  <div className="text-3xl font-bold text-emerald-300 mb-1">100%</div>
-                  <div className="text-emerald-200/70 text-sm">Personalized</div>
+
+                {/* CARD 2 */}
+                <div
+                  className="
+                    p-5
+
+                    rounded-4xl
+
+                    bg-white/80
+                    dark:bg-gray-900/70
+
+                    border
+                    border-white
+                    dark:border-gray-700
+
+                    shadow-lg
+                    backdrop-blur-xl
+
+                    transition-all
+                    duration-300
+
+                    hover:-translate-y-1
+                  "
+                >
+                  <div className="flex justify-center lg:justify-start">
+                    <Brain className="h-7 w-7 text-emerald-500 mb-2" />
+                  </div>
+
+                  <div className="text-sm text-gray-600 dark:text-gray-300">
+                    AI-Generated
+                  </div>
+                </div>
+
+                {/* CARD 3 */}
+                <div
+                  className="
+                    p-5
+
+                    rounded-4xl
+
+                    bg-white/80
+                    dark:bg-gray-900/70
+
+                    border
+                    border-white
+                    dark:border-gray-700
+
+                    shadow-lg
+                    backdrop-blur-xl
+
+                    transition-all
+                    duration-300
+
+                    hover:-translate-y-1
+                  "
+                >
+                  <div className="text-3xl font-bold text-emerald-500 mb-2">
+                    100%
+                  </div>
+
+                  <div className="text-sm text-gray-600 dark:text-gray-300">
+                    Personalized
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Right - AI Visualizer */}
-            <div className="relative">
-              {/* Main AI Visualization Card */}
-              <div className="relative h-137.5 rounded-3xl overflow-hidden bg-linear-to-br from-emerald-900/30 via-gray-900/50 to-emerald-800/30 border border-emerald-500/20 backdrop-blur-sm shadow-2xl shadow-emerald-900/30">
-                {/* Animated Neural Network Lines */}
-                <div className="absolute inset-0 opacity-40">
-                  <svg className="w-full h-full" viewBox="0 0 400 550">
-                    <path 
-                      d="M50,100 C150,50 250,150 350,100" 
-                      stroke="url(#gradient1)" 
-                      strokeWidth="1.5" 
-                      fill="none"
-                      className="animate-dash"
-                    />
-                    <path 
-                      d="M50,200 C150,150 250,250 350,200" 
-                      stroke="url(#gradient2)" 
-                      strokeWidth="1.5" 
-                      fill="none"
-                      className="animate-dash"
-                      style={{animationDelay: '0.5s'}}
-                    />
-                    <path 
-                      d="M50,300 C150,250 250,350 350,300" 
-                      stroke="url(#gradient3)" 
-                      strokeWidth="1.5" 
-                      fill="none"
-                      className="animate-dash"
-                      style={{animationDelay: '1s'}}
-                    />
-                    
-                    <defs>
-                      <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#10b981" stopOpacity="0" />
-                        <stop offset="50%" stopColor="#10b981" stopOpacity="0.5" />
-                        <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
-                      </linearGradient>
-                      <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#34d399" stopOpacity="0" />
-                        <stop offset="50%" stopColor="#34d399" stopOpacity="0.5" />
-                        <stop offset="100%" stopColor="#34d399" stopOpacity="0" />
-                      </linearGradient>
-                      <linearGradient id="gradient3" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#6ee7b7" stopOpacity="0" />
-                        <stop offset="50%" stopColor="#6ee7b7" stopOpacity="0.5" />
-                        <stop offset="100%" stopColor="#6ee7b7" stopOpacity="0" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
+            {/* RIGHT SIDE */}
+            <div className="relative order-1 lg:order-2">
+              <div
+                className="
+                  relative
+
+                  w-full
+
+                  min-h-105
+                  sm:min-h-125
+                  lg:min-h-135
+
+                  rounded-[2.5rem]
+
+                  overflow-hidden
+
+                  bg-white/70
+                  dark:bg-gray-900/70
+
+                  backdrop-blur-2xl
+
+                  border-4
+                  border-white
+                  dark:border-gray-700
+
+                  shadow-[0_20px_60px_rgba(16,185,129,0.18)]
+
+                  p-6
+                "
+              >
+                {/* Decorative */}
+                <div className="absolute top-6 right-6 text-5xl opacity-10 rotate-12">
+                  ✨
                 </div>
 
-                {/* Floating AI Elements */}
-                <div className="absolute top-6 left-6 w-16 h-16 bg-emerald-500/10 backdrop-blur-sm rounded-2xl border border-emerald-400/20 flex items-center justify-center animate-float">
-                  <Brain className="h-8 w-8 text-emerald-300" />
-                </div>
-                
-                <div className="absolute bottom-6 right-6 w-15 h-15 bg-emerald-600/20 backdrop-blur-sm rounded-3xl border border-emerald-400/30 flex items-center justify-center animate-float" style={{animationDelay: '1s'}}>
-                  <Wand2 className="h-10 w-10 text-emerald-200" />
+                <div className="absolute bottom-6 left-6 text-4xl opacity-10">
+                  🚀
                 </div>
 
-                {/* Central Content */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-8">
-                  {/* AI Icon */}
-                  <div className="w-32 h-32 bg-linear-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-8 animate-pulse shadow-xl shadow-emerald-500/40">
-                    <Cpu className="h-16 w-16 text-white" />
+                {/* Floating Brain */}
+                <div
+                  className="
+                    absolute
+                    top-6
+                    left-6
+
+                    w-14
+                    h-14
+                    sm:w-16
+                    sm:h-16
+
+                    rounded-3xl
+
+                    bg-linear-to-br
+                    from-yellow-100
+                    to-emerald-100
+
+                    dark:from-yellow-500/20
+                    dark:to-emerald-500/20
+
+                    border-2
+                    border-white
+                    dark:border-gray-700
+
+                    flex
+                    items-center
+                    justify-center
+
+                    shadow-md
+
+                    animate-bounce
+                  "
+                >
+                  <Brain className="h-7 w-7 text-emerald-500" />
+                </div>
+
+                {/* Floating Wand */}
+                <div
+                  className="
+                    absolute
+                    bottom-6
+                    right-6
+
+                    w-14
+                    h-14
+                    sm:w-16
+                    sm:h-16
+
+                    rounded-3xl
+
+                    bg-linear-to-br
+                    from-sky-100
+                    to-emerald-100
+
+                    dark:from-sky-500/20
+                    dark:to-emerald-500/20
+
+                    border-2
+                    border-white
+                    dark:border-gray-700
+
+                    flex
+                    items-center
+                    justify-center
+
+                    shadow-md
+
+                    animate-bounce
+                  "
+                  style={{ animationDelay: "1s" }}
+                >
+                  <Wand2 className="h-7 w-7 text-sky-500" />
+                </div>
+
+                {/* Main Content */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center px-5 sm:px-8 text-center">
+
+                  {/* AI Circle */}
+                  <div
+                    className="
+                      w-28
+                      h-28
+                      sm:w-36
+                      sm:h-36
+
+                      rounded-full
+
+                      bg-linear-to-br
+                      from-emerald-400
+                      to-sky-400
+
+                      flex
+                      items-center
+                      justify-center
+
+                      mb-8
+
+                      shadow-2xl
+
+                      animate-pulse
+                    "
+                  >
+                    <Cpu className="h-12 w-12 sm:h-16 sm:w-16 text-white" />
                   </div>
-                  
+
                   {/* Title */}
-                  <div className="text-center mb-6">
-                    <h3 className="text-3xl font-bold text-emerald-100 mb-3 bg-linear-to-r from-emerald-300 to-emerald-100 bg-clip-text">
+                  <div className="mb-6">
+                    <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
                       AI Course Generator
                     </h3>
-                    <div className="h-1 w-24 bg-linear-to-r from-emerald-500 to-emerald-400 mx-auto rounded-full"></div>
+
+                    <div className="h-2 w-24 rounded-full mx-auto bg-linear-to-r from-emerald-400 to-sky-400"></div>
                   </div>
-                  
-                  {/* Status text */}
-                  <div className="bg-emerald-900/40 backdrop-blur-md rounded-2xl border border-emerald-500/40 p-6 max-w-sm">
-                    <p className="text-xl text-emerald-200 font-medium text-center">
+
+                  {/* Status Card */}
+                  <div
+                    className="
+                      w-full
+                      max-w-sm
+
+                      rounded-4xl
+
+                      bg-white/85
+                      dark:bg-gray-900/80
+
+                      border
+                      border-white
+                      dark:border-gray-700
+
+                      backdrop-blur-md
+
+                      p-5
+                      sm:p-6
+
+                      shadow-xl
+                    "
+                  >
+                    <p className="text-lg sm:text-xl text-gray-800 dark:text-gray-200 font-semibold leading-relaxed">
                       Generating your personalized learning path...
                     </p>
-                    
-                    {/* Progress indicator */}
-                    <div className="mt-4">
-                      <div className="h-2 bg-emerald-800/50 rounded-full overflow-hidden">
-                        <div className="h-full bg-linear-to-r from-emerald-400 to-emerald-500 rounded-full animate-progress w-3/4"></div>
+
+                    {/* Progress */}
+                    <div className="mt-5">
+                      <div className="h-3 bg-emerald-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div className="h-full w-3/4 rounded-full bg-linear-to-r from-emerald-400 to-sky-400"></div>
                       </div>
-                      <div className="flex justify-between text-sm text-emerald-300/70 mt-2">
+
+                      <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400 mt-2">
                         <span>Processing</span>
                         <span>75%</span>
                       </div>
                     </div>
                   </div>
+
                 </div>
               </div>
             </div>
+
           </div>
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section className="py-24 bg-linear-to-b from-gray-950 to-emerald-950/30">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              How <span className="text-emerald-300">CourseConstruct</span> Works
+      {/* HOW IT WORKS */}
+      <section
+        className="
+          py-20
+          sm:py-24
+
+          bg-linear-to-b
+          from-emerald-50
+          via-white
+          to-sky-50
+
+          dark:from-gray-950
+          dark:via-gray-900
+          dark:to-gray-950
+        "
+      >
+        <div className="container mx-auto px-4 sm:px-6">
+
+          <div className="text-center mb-16 sm:mb-20">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
+              How{" "}
+              <span className="text-emerald-500">
+                CourseConstruct
+              </span>{" "}
+              Works
             </h2>
-            <p className="text-lg text-emerald-200/70 max-w-2xl mx-auto">
+
+            <p className="text-base sm:text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               Three simple steps to your personalized AI-generated course
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 relative">
-            {/* Connecting Line */}
-            <div className="hidden md:block absolute top-1/2 left-0 right-0 h-0.5 bg-linear-to-r from-emerald-500/20 via-emerald-500/50 to-emerald-500/20 transform -translate-y-1/2"></div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
 
             {[
               {
                 step: "01",
                 icon: <Brain className="h-10 w-10" />,
                 title: "Describe Your Goal",
-                desc: "Tell our AI what you want to learn. Be as specific or broad as you like."
+                desc: "Tell our AI what you want to learn. Be as specific or broad as you like.",
               },
               {
                 step: "02",
                 icon: <Wand2 className="h-10 w-10" />,
                 title: "AI Generates Course",
-                desc: "Our AI instantly creates a complete learning path with modules, lessons, and projects."
+                desc: "Our AI instantly creates a complete learning path with modules, lessons, and projects.",
               },
               {
                 step: "03",
                 icon: <Rocket className="h-10 w-10" />,
                 title: "Start Learning",
-                desc: "Begin your personalized course immediately. Track progress and get AI-powered recommendations."
+                desc: "Begin your personalized course immediately. Track your progress by marking chapters as complete.",
               },
             ].map((item, idx) => (
-              <div 
+              <div
                 key={idx}
-                className="relative bg-linear-to-br from-gray-900/50 to-emerald-900/20 p-8 rounded-3xl border border-emerald-800/30 backdrop-blur-sm group hover:border-emerald-500/50 transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-emerald-900/20"
+                className="
+                  relative
+
+                  bg-white/80
+                  dark:bg-gray-900/70
+
+                  backdrop-blur-xl
+
+                  border-4
+                  border-white
+                  dark:border-gray-700
+
+                  shadow-[0_10px_40px_rgba(16,185,129,0.12)]
+
+                  p-8
+                  pt-12
+
+                  rounded-[2.5rem]
+
+                  hover:-translate-y-2
+
+                  transition-all
+                  duration-500
+                "
               >
-                {/* Step Number */}
-                <div className="absolute -top-4 left-8 w-12 h-12 bg-linear-to-r from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-emerald-500/30">
+                <div className="absolute -top-5 left-8 w-14 h-14 bg-linear-to-r from-emerald-400 to-sky-400 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg">
                   {item.step}
                 </div>
-                
-                <div className="w-16 h-16 bg-emerald-900/50 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
-                  <div className="text-emerald-300">
-                    {item.icon}
-                  </div>
+
+                <div className="w-16 h-16 bg-linear-to-br from-yellow-100 to-emerald-100 dark:from-yellow-500/20 dark:to-emerald-500/20 rounded-4xl flex items-center justify-center mb-6 border-2 border-white dark:border-gray-700 shadow-md text-emerald-500">
+                  {item.icon}
                 </div>
-                
-                <h3 className="text-2xl font-bold text-white mb-4">
+
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
                   {item.title}
                 </h3>
-                
-                <p className="text-emerald-200/70">
+
+                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
                   {item.desc}
                 </p>
               </div>
@@ -253,110 +653,195 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-24 bg-gray-950">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+      {/* FEATURES */}
+      <section
+        className="
+          py-20
+          sm:py-24
+
+          bg-linear-to-b
+          from-white
+          to-emerald-50
+
+          dark:from-gray-900
+          dark:to-gray-950
+        "
+      >
+        <div className="container mx-auto px-4 sm:px-6">
+
+          <div className="text-center mb-16 sm:mb-20">
+
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-6">
               AI-Powered Features
             </h2>
-            <p className="text-lg text-emerald-200/70 max-w-2xl mx-auto">
+
+            <p className="text-base sm:text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               Everything you need for a personalized learning experience
             </p>
+
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+
             {[
               {
                 icon: <Sparkles className="h-8 w-8" />,
                 title: "Dynamic Course Generation",
-                desc: "Every course is unique, generated based on your specific learning goals"
+                desc: "Every course is unique, generated based on your specific learning goals",
               },
               {
                 icon: <Wand2 className="h-8 w-8" />,
                 title: "Instant Content Creation",
-                desc: "Get comprehensive learning materials generated in seconds"
+                desc: "Get comprehensive learning materials generated in seconds",
               },
               {
                 icon: <BookOpen className="h-8 w-8" />,
                 title: "Progress Tracking",
-                desc: "Monitor your learning journey with AI-powered insights"
+                desc: "Monitor your learning journey",
               },
               {
                 icon: <Brain className="h-8 w-8" />,
                 title: "Adaptive Learning Paths",
-                desc: "Courses evolve based on your progress and understanding"
+                desc: "Courses are build based on your understanding",
               },
               {
                 icon: <Rocket className="h-8 w-8" />,
                 title: "Interactive Modules",
-                desc: "Engage with AI-generated quizzes and exercises"
+                desc: "Engage with AI-generated quizzes and exercises",
               },
               {
-                icon: <Cpu className="h-8 w-8" />,
-                title: "Smart Recommendations",
-                desc: "Get personalized suggestions for related topics"
+                icon: <NotebookIcon className="h-8 w-8" />,
+                title: "Export Content",
+                desc: "Get PDF notes for the course",
               },
             ].map((feature, idx) => (
-              <div 
+              <div
                 key={idx}
-                className="bg-linear-to-br from-gray-900 to-emerald-900/20 p-8 rounded-2xl border border-emerald-800/30 hover:border-emerald-500/50 transition-all duration-300 group hover:-translate-y-2"
+                className="
+                  bg-white/80
+                  dark:bg-gray-900/70
+
+                  backdrop-blur-xl
+
+                  border-4
+                  border-white
+                  dark:border-gray-700
+
+                  shadow-[0_10px_40px_rgba(16,185,129,0.12)]
+
+                  p-8
+
+                  rounded-[2.5rem]
+
+                  hover:-translate-y-2
+
+                  transition-all
+                  duration-500
+                "
               >
-                <div className="w-14 h-14 bg-emerald-900/40 rounded-xl flex items-center justify-center mb-6 group-hover:bg-emerald-800/60 transition-colors duration-300">
-                  <div className="text-emerald-300 group-hover:scale-110 transition-transform duration-300">
-                    {feature.icon}
-                  </div>
+                <div className="w-16 h-16 bg-linear-to-br from-yellow-100 to-emerald-100 dark:from-yellow-500/20 dark:to-emerald-500/20 rounded-4xl flex items-center justify-center mb-6 border-2 border-white dark:border-gray-700 shadow-md text-emerald-500">
+                  {feature.icon}
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3">
+
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
                   {feature.title}
                 </h3>
-                <p className="text-emerald-200/70">
+
+                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
                   {feature.desc}
                 </p>
+
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Section - With Generate AI Course Button */}
-      <section className="relative overflow-hidden py-24 bg-linear-to-r from-emerald-900 via-emerald-800 to-emerald-900">
-        {/* Animated Background */}
-        <div className="absolute inset-0">
-          <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-emerald-500/10 rounded-full animate-ping" style={{animationDuration: '3s'}}></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-emerald-400/5 rounded-full animate-ping" style={{animationDuration: '4s', animationDelay: '1s'}}></div>
-        </div>
+      {/* CTA */}
+      <section
+        className="
+          relative
+          overflow-hidden
 
-        <div className="relative container mx-auto px-6 text-center">
-          <div className="inline-flex items-center gap-2 bg-emerald-800/40 backdrop-blur-sm px-6 py-3 rounded-full mb-8 border border-emerald-400/30">
-            <Sparkles className="h-5 w-5 text-emerald-300" />
-            <span className="font-medium text-emerald-100">No Predefined Courses Needed</span>
+          py-20
+          sm:py-24
+
+          bg-linear-to-r
+          from-emerald-300
+          via-teal-300
+          to-sky-300
+
+          dark:from-emerald-700
+          dark:via-teal-700
+          dark:to-cyan-700
+        "
+      >
+        <div className="absolute top-10 left-10 w-40 h-40 bg-white/30 rounded-full blur-3xl"></div>
+
+        <div className="absolute bottom-10 right-10 w-56 h-56 bg-white/20 rounded-full blur-3xl"></div>
+
+        <div className="relative container mx-auto px-4 sm:px-6 text-center">
+
+          <div className="inline-flex items-center gap-2 bg-white/80 dark:bg-gray-900/70 backdrop-blur-xl px-5 py-3 rounded-full mb-8 border-2 border-white dark:border-gray-700 shadow-lg">
+
+            <Sparkles className="h-5 w-5 text-emerald-500" />
+
+            <span className="font-semibold text-gray-800 dark:text-white text-sm sm:text-base">
+              No Predefined Courses Needed
+            </span>
+
           </div>
-          
-          <h2 className="text-4xl md:text-6xl font-bold text-white mb-8">
+
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white mb-8 leading-tight">
             Ready to Learn Anything?
           </h2>
-          
-          <p className="text-xl text-emerald-100/80 max-w-2xl mx-auto mb-12">
-            Generate your first AI-powered course in seconds. 
+
+          <p className="text-lg sm:text-xl text-white/90 max-w-2xl mx-auto mb-12 leading-relaxed">
+            Generate your first AI-powered course in seconds.
             The future of personalized learning starts here.
           </p>
-          
-          {/* Generate AI Course Button - Links to workspace */}
+
           <Link href="/workspace">
-            <Button 
-              size="lg" 
-              className="bg-linear-to-r from-emerald-400 to-emerald-500 hover:from-emerald-500 hover:to-emerald-600 text-white font-bold px-12 py-7 text-lg shadow-2xl shadow-emerald-500/30 hover:shadow-emerald-500/50 transition-all duration-300 group"
+            <Button
+              size="lg"
+              className="
+                bg-white
+                dark:bg-gray-900
+
+                hover:scale-105
+
+                text-emerald-600
+                dark:text-emerald-300
+
+                font-bold
+
+                px-10
+                py-6
+
+                text-base
+                sm:text-lg
+
+                rounded-4xl
+
+                transition-all
+                duration-300
+
+                shadow-xl
+
+                w-full
+                sm:w-auto
+              "
             >
               <Brain className="mr-3 h-6 w-6" />
-              Generate AI Course
-              <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-2 transition-transform" />
+              Generate Your Course
+              <ArrowRight className="ml-3 h-5 w-5" />
             </Button>
           </Link>
-          
-          <p className="text-emerald-300/60 mt-8 text-sm">
+
+          <p className="text-white/80 mt-8 text-sm">
             No credit card required • Instant access • 100% personalized
           </p>
+
         </div>
       </section>
     </PageWrapper>

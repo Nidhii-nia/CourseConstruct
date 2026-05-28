@@ -1,16 +1,14 @@
-import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
+import { drizzle } from "drizzle-orm/neon-http";
 
-// Add connection timeout and retry logic
-const sql = neon(process.env.DATABASE_URL, {
-  // Add fetch options for timeout
-  fetchOptions: {
-    // Set timeout to 10 seconds
-    timeout: 10000,
-  }
-});
+import { neon } from "@neondatabase/serverless";
 
-export const db = drizzle(sql, {
-  // Add logger for debugging
-  logger: process.env.NODE_ENV === 'development'
-});
+const globalForDb = globalThis;
+
+const sql = globalForDb.sql || neon(process.env.DATABASE_URL);
+console.log("DB URL:", process.env.DATABASE_URL);
+
+if (process.env.NODE_ENV !== "production") {
+  globalForDb.sql = sql;
+}
+
+export const db = drizzle(sql);

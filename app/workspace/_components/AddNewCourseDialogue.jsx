@@ -1,8 +1,10 @@
 "use client";
+
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { v4 as uuid4 } from "uuid";
 import { toast } from "sonner";
+
 import {
   Dialog,
   DialogContent,
@@ -12,9 +14,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+
 import {
   Select,
   SelectContent,
@@ -22,14 +26,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
 import { Button } from "@/components/ui/button";
+
 import { Sparkles, Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+
+import { useRouter, usePathname } from "next/navigation";
+
 import { startLoading, stopLoading } from "@/app/components/RouteLoaderInner";
 
-function AddNewCourseDialogue({ children, open, setOpen }) {
-  const [isLoading, setIsLoading] = useState(false);
+function AddNewCourseDialogue({ children }) {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // INTERNAL DIALOG STATE
+  const [open, setOpen] = useState(false);
+
   const [mounted, setMounted] = useState(false);
+
+  const [isLoading, setIsLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -40,12 +55,27 @@ function AddNewCourseDialogue({ children, open, setOpen }) {
     level: "",
   });
 
-  const router = useRouter();
-
-  // Only render on client-side to avoid hydration mismatch
+  // HYDRATION FIX
   useEffect(() => {
     setMounted(true);
-    return () => setMounted(false);
+
+    return () => {
+      setMounted(false);
+    };
+  }, []);
+
+  // CLOSE DIALOG ON ROUTE CHANGE
+  useEffect(() => {
+    setOpen(false);
+    setIsLoading(false);
+  }, [pathname]);
+
+  // CLEANUP ON UNMOUNT
+  useEffect(() => {
+    return () => {
+      setOpen(false);
+      setIsLoading(false);
+    };
   }, []);
 
   const onHandleInputChange = (field, value) => {
@@ -71,22 +101,27 @@ function AddNewCourseDialogue({ children, open, setOpen }) {
       toast.error("Please enter a course name.");
       return false;
     }
+
     if (formData.name.length > 100) {
       toast.error("Course name is too long (max 100 characters).");
       return false;
     }
-    if (!formData.noOfChapters || formData.noOfChapters < 1) {
+
+    if (!formData.noOfChapters || Number(formData.noOfChapters) < 1) {
       toast.error("Please enter a valid number of chapters (minimum 1).");
       return false;
     }
-    if (formData.noOfChapters > 20) {
+
+    if (Number(formData.noOfChapters) > 20) {
       toast.error("Maximum 20 chapters allowed.");
       return false;
     }
+
     if (!formData.level) {
       toast.error("Please select a difficulty level.");
       return false;
     }
+
     return true;
   };
 
@@ -94,6 +129,7 @@ function AddNewCourseDialogue({ children, open, setOpen }) {
     if (!validateForm()) return;
 
     setIsLoading(true);
+
     startLoading();
 
     try {
@@ -106,7 +142,9 @@ function AddNewCourseDialogue({ children, open, setOpen }) {
           clientRequestId,
         },
         {
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+          },
           timeout: 180000,
         },
       );
@@ -121,21 +159,28 @@ function AddNewCourseDialogue({ children, open, setOpen }) {
 
         toast.success("Layouts generated successfully!");
 
+        // CLOSE DIALOG
         setOpen(false);
+
+        // RESET FORM
+        resetForm();
+
         router.push("/workspace/layout-selection");
+
         return;
-      } else {
-        toast.error(
-          result?.data?.error ||
-            "Failed to generate course please try later.",
-        );
       }
+
+      toast.error(
+        result?.data?.error || "Failed to generate course please try later.",
+      );
     } catch (error) {
       console.error("Error generating course:", error);
 
       if (error.response?.status === 401) {
         toast.error("Please sign in to create a course");
+
         window.location.href = "/sign-in";
+
         return;
       }
 
@@ -144,7 +189,9 @@ function AddNewCourseDialogue({ children, open, setOpen }) {
           toast.warning(
             "Free users can only create one course. Upgrade to premium!",
           );
+
           router.push("/workspace/billing");
+
           return;
         }
       }
@@ -157,26 +204,32 @@ function AddNewCourseDialogue({ children, open, setOpen }) {
           "Failed to generate course.",
       );
     } finally {
-      if (mounted) setIsLoading(false);
+      if (mounted) {
+        setIsLoading(false);
+      }
+
       stopLoading();
     }
   };
 
-  // Prevent server-side rendering of the Dialog to avoid hydration mismatch
+  // AVOID HYDRATION MISMATCH
   if (!mounted) {
-    // Return a placeholder with same dimensions to avoid layout shift
     return <div className="inline-block">{children}</div>;
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogTrigger asChild>
+        <div onClick={() => setOpen(true)}>{children}</div>
+      </DialogTrigger>
+
       <DialogContent className="sm:max-w-125 md:max-w-137.5 max-h-[85vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl font-bold">
             <Sparkles className="w-5 h-5 text-primary" />
             Create New Course
           </DialogTitle>
+
           <DialogDescription className="text-muted-foreground">
             Fill in the details below to generate a new course structure. AI
             will help create a comprehensive course layout.
@@ -184,30 +237,33 @@ function AddNewCourseDialogue({ children, open, setOpen }) {
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* Course Name */}
+          {/* COURSE NAME */}
           <div className="space-y-2">
             <label htmlFor="name" className="text-sm font-medium">
               Course Name *
             </label>
+
             <Input
               id="name"
-              placeholder="Enter course name (e.g., 'Advanced React Patterns')"
+              placeholder="Enter course name (e.g., Advanced React Patterns)"
               value={formData.name}
               onChange={(e) => onHandleInputChange("name", e.target.value)}
               disabled={isLoading}
               maxLength={100}
               className="w-full"
             />
+
             <p className="text-xs text-muted-foreground">
               {formData.name.length}/100 characters
             </p>
           </div>
 
-          {/* Description */}
+          {/* DESCRIPTION */}
           <div className="space-y-2">
             <label htmlFor="description" className="text-sm font-medium">
               Description (Optional)
             </label>
+
             <Textarea
               id="description"
               placeholder="Brief description of what this course covers..."
@@ -221,16 +277,18 @@ function AddNewCourseDialogue({ children, open, setOpen }) {
             />
           </div>
 
-          {/* Include Videos */}
+          {/* INCLUDE VIDEOS */}
           <div className="flex items-center justify-between p-3 border rounded-lg">
             <div className="space-y-0.5">
               <label className="text-sm font-medium">
                 Include YouTube Videos
               </label>
+
               <p className="text-xs text-muted-foreground">
-                AI will find relevant videos for each chapter
+                Get relevant videos for each chapter
               </p>
             </div>
+
             <Switch
               checked={formData.includeVideo}
               onCheckedChange={(checked) =>
@@ -240,11 +298,12 @@ function AddNewCourseDialogue({ children, open, setOpen }) {
             />
           </div>
 
-          {/* Number of Chapters */}
+          {/* NUMBER OF CHAPTERS */}
           <div className="space-y-2">
             <label htmlFor="chapters" className="text-sm font-medium">
               Number of Chapters *
             </label>
+
             <Input
               id="chapters"
               type="number"
@@ -258,16 +317,18 @@ function AddNewCourseDialogue({ children, open, setOpen }) {
               disabled={isLoading}
               className="w-full"
             />
+
             <p className="text-xs text-muted-foreground">
               Recommended: 4-7 chapters for optimal learning
             </p>
           </div>
 
-          {/* Category */}
+          {/* CATEGORY */}
           <div className="space-y-2">
             <label htmlFor="category" className="text-sm font-medium">
               Category (Optional)
             </label>
+
             <Input
               id="category"
               placeholder="e.g., Web Development, Data Science"
@@ -277,11 +338,12 @@ function AddNewCourseDialogue({ children, open, setOpen }) {
             />
           </div>
 
-          {/* Difficulty Level */}
+          {/* DIFFICULTY LEVEL */}
           <div className="space-y-2">
             <label htmlFor="level" className="text-sm font-medium">
               Difficulty Level *
             </label>
+
             <Select
               value={formData.level}
               onValueChange={(value) => onHandleInputChange("level", value)}
@@ -290,9 +352,12 @@ function AddNewCourseDialogue({ children, open, setOpen }) {
               <SelectTrigger>
                 <SelectValue placeholder="Select difficulty level" />
               </SelectTrigger>
+
               <SelectContent>
                 <SelectItem value="beginner">Beginner</SelectItem>
+
                 <SelectItem value="intermediate">Intermediate</SelectItem>
+
                 <SelectItem value="advanced">Advanced</SelectItem>
               </SelectContent>
             </Select>
@@ -309,6 +374,7 @@ function AddNewCourseDialogue({ children, open, setOpen }) {
           >
             Cancel
           </Button>
+
           <Button
             onClick={onGenerate}
             disabled={isLoading}

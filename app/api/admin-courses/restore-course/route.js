@@ -8,7 +8,6 @@ export async function POST(req) {
   try {
     // AUTH CHECK
     const { userId } = await auth();
-    const user = await currentUser();
 
     if (!userId || !user) {
       return NextResponse.json(

@@ -1,7 +1,12 @@
-import { clerkMiddleware, createRouteMatcher, clerkClient } from "@clerk/nextjs/server";
+import {
+  clerkMiddleware,
+  createRouteMatcher,
+  clerkClient,
+} from "@clerk/nextjs/server";
+
 import { NextResponse } from "next/server";
 
-//  routes (no auth required)
+// routes (no auth required)
 const isPublicRoute = createRouteMatcher([
   "/",
   "/sign-in(.*)",
@@ -11,17 +16,23 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
+  const { pathname } = req.nextUrl;
+
+  // DON'T apply middleware logic on landing page
+  if (pathname === "/") {
+    return NextResponse.next();
+  }
+
   const { userId } = await auth();
 
-  const { pathname } = req.nextUrl;
   const isApiRoute = pathname.startsWith("/api");
 
-  //  Allow public routes
+  // Allow public routes
   if (isPublicRoute(req)) {
     return NextResponse.next();
   }
 
-  //  Not logged in
+  // Not logged in
   if (!userId) {
     // API should return status, not redirect
     if (isApiRoute) {
@@ -35,7 +46,10 @@ export default clerkMiddleware(async (auth, req) => {
   // Admin route protection
   if (pathname.startsWith("/admin")) {
     try {
-      const user = await clerkClient.users.getUser(userId);
+      // FIXED: clerkClient is async in newer Clerk versions
+      const client = await clerkClient();
+
+      const user = await client.users.getUser(userId);
 
       if (user.publicMetadata?.role !== "admin") {
         return NextResponse.redirect(new URL("/", req.url));
@@ -50,7 +64,7 @@ export default clerkMiddleware(async (auth, req) => {
   return NextResponse.next();
 });
 
-// Apply middleware to ALL routes (including API)
+// Apply middleware to ALL routes except static files
 export const config = {
   matcher: [
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
